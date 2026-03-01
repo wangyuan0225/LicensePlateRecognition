@@ -23,9 +23,7 @@
         <div class="demo-ui">
           <div class="demo-header">{{ $t('home.demoHeader') }}</div>
           <div class="demo-box">
-            <div class="bounding-box">
-              <span class="plate-text">{{ $t('home.demoPlate') }}</span>
-            </div>
+            <img src="@/assets/demo-result.png" alt="Demo Recognition Result" class="demo-image" />
           </div>
         </div>
       </div>
@@ -172,37 +170,15 @@ const features = computed(() => [
   display: flex;
   align-items: center;
   justify-content: center;
-  background: repeating-linear-gradient(45deg,
-      #f2f2f0,
-      #f2f2f0 10px,
-      #f7f7f5 10px,
-      #f7f7f5 20px);
+  background: #1a1a2e;
   position: relative;
+  overflow: hidden;
 }
 
-.bounding-box {
-  width: 200px;
-  height: 80px;
-  border: 3px solid var(--success-color);
-  border-radius: 4px;
-  position: relative;
-  background: rgba(15, 123, 108, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.plate-text {
-  background: var(--success-color);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 1rem;
-  letter-spacing: 2px;
-  position: absolute;
-  top: -30px;
-  left: -3px;
+.demo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .features-section {
