@@ -7,22 +7,23 @@
       </div>
       <div class="actions-area">
         <el-input v-model="searchQuery" :placeholder="$t('history.searchPlaceholder')" prefix-icon="Search"
-          class="search-input" clearable />
+          class="search-input" clearable @clear="fetchData" @keyup.enter="fetchData" />
         <el-date-picker v-model="dateRange" type="daterange" range-separator="-"
-          :start-placeholder="$t('history.startDate')" :end-placeholder="$t('history.endDate')" class="date-picker" />
-        <el-button type="primary" icon="Download">{{ $t('history.exportBtn') }}</el-button>
+          :start-placeholder="$t('history.startDate')" :end-placeholder="$t('history.endDate')" class="date-picker"
+          @change="fetchData" />
+        <el-button type="primary" icon="Search" @click="fetchData">搜索</el-button>
       </div>
     </div>
 
     <div class="notion-card table-wrapper">
-      <el-table :data="filteredData" style="width: 100%" v-loading="loading" :row-class-name="tableRowClassName">
-        <el-table-column prop="date" :label="$t('history.colDate')" min-width="220" align="center">
+      <el-table :data="tableData" style="width: 100%" v-loading="loading" :row-class-name="tableRowClassName">
+        <el-table-column prop="createdAt" :label="$t('history.colDate')" min-width="220" align="center">
           <template #default="scope">
             <span class="date-cell">
               <el-icon>
                 <Calendar />
               </el-icon>
-              {{ scope.row.date }}
+              {{ scope.row.createdAt }}
             </span>
           </template>
         </el-table-column>
@@ -35,86 +36,178 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="model" :label="$t('history.colModel')" min-width="180" align="center">
+        <el-table-column prop="plateType" label="车牌属性" min-width="120" align="center">
           <template #default="scope">
-            <span class="model-cell">{{ scope.row.model }}</span>
+            <span class="model-cell">{{ scope.row.plateType || '-' }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="confidence" :label="$t('history.colConfidence')" min-width="140">
+        <el-table-column prop="modelType" :label="$t('history.colModel')" min-width="140" align="center">
           <template #default="scope">
-            <span class="confidence-cell" :class="{ 'high-conf': scope.row.confidence >= 0.95 }">
-              {{ (scope.row.confidence * 100).toFixed(1) }}%
-            </span>
+            <span class="model-cell">{{ scope.row.modelType }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="timeTaken" :label="$t('history.colTime')" min-width="120">
+        <el-table-column prop="processingTimeMs" :label="$t('history.colTime')" min-width="120">
           <template #default="scope">
-            <span class="time-cell">{{ scope.row.timeTaken }}ms</span>
+            <span class="time-cell">{{ scope.row.processingTimeMs ? scope.row.processingTimeMs.toFixed(1) : '-' }}ms</span>
           </template>
         </el-table-column>
 
         <el-table-column :label="$t('history.colThumb')" width="140" align="center">
           <template #default="scope">
-            <el-image :src="scope.row.thumbnail" class="thumb-img" :preview-src-list="[scope.row.thumbnail]"
-              preview-teleported fit="cover" />
+            <el-image :src="scope.row.thumbnailUrl" class="thumb-img"
+              :preview-src-list="[scope.row.resultImageUrl, scope.row.originalImageUrl]" preview-teleported
+              fit="cover" />
           </template>
         </el-table-column>
 
         <el-table-column fixed="right" :label="$t('history.colActions')" width="140" align="center">
           <template #default="scope">
-            <el-button link type="primary" size="small">{{ $t('history.actionDetails') }}</el-button>
-            <el-button link type="danger" size="small">{{ $t('history.actionDelete') }}</el-button>
+            <el-button link type="primary" size="small" @click="showDetail(scope.row)">{{ $t('history.actionDetails')
+              }}</el-button>
+            <el-button link type="danger" size="small" @click="deleteRecord(scope.row)">{{ $t('history.actionDelete')
+              }}</el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="pagination-wrapper">
         <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper" :total="mockData.length" />
+          layout="total, sizes, prev, pager, next, jumper" :total="total" @current-change="fetchData"
+          @size-change="fetchData" />
       </div>
     </div>
+
+    <!-- Detail Dialog -->
+    <el-dialog v-model="detailVisible" title="识别详情" width="800px">
+      <div v-if="detailRecord" class="detail-content">
+        <div class="detail-images">
+          <div class="detail-image-box">
+            <h4>原始图像</h4>
+            <el-image :src="detailRecord.originalImageUrl" fit="contain" style="width: 100%; height: 300px;" />
+          </div>
+          <div class="detail-image-box">
+            <h4>检测结果图像</h4>
+            <el-image :src="detailRecord.resultImageUrl" fit="contain" style="width: 100%; height: 300px;" />
+          </div>
+        </div>
+        <div class="detail-info">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="车牌号码">{{ detailRecord.plateNumber }}</el-descriptions-item>
+            <el-descriptions-item label="车牌属性">{{ detailRecord.plateType || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="算法模型">{{ detailRecord.modelType }}</el-descriptions-item>
+            <el-descriptions-item label="识别耗时">{{ detailRecord.processingTimeMs ?
+              detailRecord.processingTimeMs.toFixed(1) : '-' }}ms</el-descriptions-item>
+            <el-descriptions-item label="识别时间">{{ detailRecord.createdAt }}</el-descriptions-item>
+            <el-descriptions-item label="检测数量">{{ detailRecord.detectCount }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Calendar, Search, Download } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
+import { Calendar, Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(true)
 const searchQuery = ref('')
 const dateRange = ref(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const total = ref(0)
+const tableData = ref([])
+const detailVisible = ref(false)
+const detailRecord = ref(null)
 
-// Mock Data
-const mockData = ref([
-  { id: 1, date: '2026-02-24 14:30:22', plateNumber: '沪A·88888', model: 'YOLOv8 Fast', confidence: 0.985, timeTaken: 124, thumbnail: 'https://placehold.co/100x40/f2f2f0/333?text=Plate' },
-  { id: 2, date: '2026-02-24 13:15:05', plateNumber: '京B·12345', model: 'YOLOv8 High Acc', confidence: 0.992, timeTaken: 256, thumbnail: 'https://placehold.co/100x40/f2f2f0/333?text=Plate' },
-  { id: 3, date: '2026-02-23 09:45:11', plateNumber: '粤C·AB345', model: 'ResNet50 Hybrid', confidence: 0.945, timeTaken: 310, thumbnail: 'https://placehold.co/100x40/f2f2f0/333?text=Plate' },
-  { id: 4, date: '2026-02-23 08:20:00', plateNumber: '苏D·99X99', model: 'YOLOv8 Fast', confidence: 0.971, timeTaken: 118, thumbnail: 'https://placehold.co/100x40/f2f2f0/333?text=Plate' },
-  { id: 5, date: '2026-02-22 16:55:33', plateNumber: '浙E·1827Z', model: 'YOLOv8 Fast', confidence: 0.988, timeTaken: 120, thumbnail: 'https://placehold.co/100x40/f2f2f0/333?text=Plate' },
-])
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const params = new URLSearchParams()
+    params.append('page', currentPage.value)
+    params.append('size', pageSize.value)
+
+    if (searchQuery.value) {
+      params.append('keyword', searchQuery.value)
+    }
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.append('startDate', formatDate(dateRange.value[0]))
+      params.append('endDate', formatDate(dateRange.value[1]))
+    }
+
+    const token = localStorage.getItem('token')
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const res = await fetch(`/api/v1/history/list?${params.toString()}`, { headers })
+    const data = await res.json()
+
+    if (data.code === 200) {
+      tableData.value = data.data.records
+      total.value = data.data.total
+    } else {
+      ElMessage.error(data.message || '获取历史记录失败')
+    }
+  } catch (err) {
+    ElMessage.error('网络请求失败，请检查后端是否启动')
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return d.toISOString().split('T')[0]
+}
+
+const showDetail = (row) => {
+  detailRecord.value = row
+  detailVisible.value = true
+}
+
+const deleteRecord = async (row) => {
+  try {
+    await ElMessageBox.confirm('确认删除该条记录？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    const token = localStorage.getItem('token')
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const res = await fetch(`/api/v1/history/${row.id}`, {
+      method: 'DELETE',
+      headers,
+    })
+    const data = await res.json()
+
+    if (data.code === 200) {
+      ElMessage.success('删除成功')
+      fetchData()
+    } else {
+      ElMessage.error(data.message || '删除失败')
+    }
+  } catch (err) {
+    if (err !== 'cancel') {
+      ElMessage.error('删除失败')
+      console.error(err)
+    }
+  }
+}
 
 onMounted(() => {
-  setTimeout(() => {
-    loading.value = false
-  }, 600)
-})
-
-const filteredData = computed(() => {
-  let filtered = mockData.value
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(item =>
-      item.plateNumber.toLowerCase().includes(query)
-    )
-  }
-
-  // Implement pagination slice here in a real app, currently showing all filtered
-  return filtered
+  fetchData()
 })
 
 const tableRowClassName = ({ rowIndex }) => {
@@ -166,7 +259,6 @@ const tableRowClassName = ({ rowIndex }) => {
 
 .table-wrapper {
   padding: 0;
-  /* Remove padding for edge-to-edge table */
   overflow: hidden;
 }
 
@@ -206,14 +298,6 @@ const tableRowClassName = ({ rowIndex }) => {
   border: 1px solid var(--border-color);
 }
 
-.confidence-cell {
-  font-weight: 500;
-}
-
-.confidence-cell.high-conf {
-  color: var(--success-color);
-}
-
 .time-cell {
   color: var(--text-secondary);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -232,5 +316,31 @@ const tableRowClassName = ({ rowIndex }) => {
   display: flex;
   justify-content: flex-end;
   background: white;
+}
+
+/* Detail dialog styles */
+.detail-content {
+  padding: 0 8px;
+}
+
+.detail-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.detail-image-box {
+  text-align: center;
+}
+
+.detail-image-box h4 {
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detail-info {
+  margin-top: 16px;
 }
 </style>

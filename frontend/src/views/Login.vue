@@ -90,16 +90,58 @@ const toggleMode = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate((valid) => {
+  await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
 
-      // Simulate API call
-      setTimeout(() => {
+      try {
+        if (isLogin.value) {
+          // Login
+          const res = await fetch('/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: form.email,
+              password: form.password,
+            }),
+          })
+          const data = await res.json()
+
+          if (data.code === 200) {
+            localStorage.setItem('token', data.data.token)
+            localStorage.setItem('user', JSON.stringify(data.data.user))
+            ElMessage.success('登录成功')
+            router.push('/analyze')
+          } else {
+            ElMessage.error(data.message || '登录失败')
+          }
+        } else {
+          // Register
+          const res = await fetch('/api/v1/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: form.username,
+              email: form.email,
+              password: form.password,
+            }),
+          })
+          const data = await res.json()
+
+          if (data.code === 201) {
+            ElMessage.success('注册成功，请登录')
+            isLogin.value = true
+            formRef.value?.resetFields()
+          } else {
+            ElMessage.error(data.message || '注册失败')
+          }
+        }
+      } catch (err) {
+        ElMessage.error('网络请求失败，请检查后端是否启动')
+        console.error(err)
+      } finally {
         loading.value = false
-        ElMessage.success(isLogin.value ? 'Logged in successfully' : 'Registered successfully')
-        router.push('/analyze')
-      }, 1000)
+      }
     }
   })
 }

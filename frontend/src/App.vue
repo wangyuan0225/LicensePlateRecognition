@@ -19,9 +19,32 @@
               </el-icon>
               {{ currentLang === 'zh' ? 'EN' : '中文' }}
             </el-button>
-            <router-link to="/login">
-              <el-button type="primary" round size="small">{{ $t('app.login') }}</el-button>
-            </router-link>
+
+            <!-- Not logged in: show login button -->
+            <template v-if="!isLoggedIn">
+              <router-link to="/login">
+                <el-button type="primary" round size="small">{{ $t('app.login') }}</el-button>
+              </router-link>
+            </template>
+
+            <!-- Logged in: show username + logout -->
+            <template v-else>
+              <el-dropdown @command="handleUserCommand">
+                <span class="user-info">
+                  <el-icon><User /></el-icon>
+                  <span class="username-text">{{ username }}</span>
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="logout">
+                      <el-icon><SwitchButton /></el-icon>
+                      退出登录
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
           </nav>
         </div>
       </header>
@@ -42,16 +65,56 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Monitor, CopyDocument } from '@element-plus/icons-vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Monitor, CopyDocument, User, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const { t, locale } = useI18n()
+const router = useRouter()
+const route = useRoute()
 
 const currentLang = computed(() => locale.value)
 const toggleLanguage = () => {
   locale.value = locale.value === 'zh' ? 'en' : 'zh'
 }
+
+const isLoggedIn = ref(false)
+const username = ref('')
+
+const checkLoginStatus = () => {
+  const token = localStorage.getItem('token')
+  const userStr = localStorage.getItem('user')
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      isLoggedIn.value = true
+      username.value = user.username || user.email || 'User'
+    } catch {
+      isLoggedIn.value = false
+      username.value = ''
+    }
+  } else {
+    isLoggedIn.value = false
+    username.value = ''
+  }
+}
+
+const handleUserCommand = (command) => {
+  if (command === 'logout') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    isLoggedIn.value = false
+    username.value = ''
+    ElMessage.success('已退出登录')
+    router.push('/')
+  }
+}
+
+// Check on mount and on route change (to catch login redirect)
+onMounted(checkLoginStatus)
+watch(() => route.path, checkLoginStatus)
 </script>
 
 <style scoped>
@@ -136,6 +199,33 @@ const toggleLanguage = () => {
   width: 1px;
   height: 16px;
   background-color: var(--border-color);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.user-info:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.username-text {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-main {

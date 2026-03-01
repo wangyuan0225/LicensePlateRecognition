@@ -14,18 +14,34 @@ const routes = [
     {
         path: '/analyze',
         name: 'Analyze',
-        component: () => import('../views/Analyze.vue')
+        component: () => import('../views/Analyze.vue'),
+        meta: { requiresAuth: true }
     },
     {
         path: '/history',
         name: 'History',
-        component: () => import('../views/History.vue')
+        component: () => import('../views/History.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes
+})
+
+// Navigation guard: redirect to login if not authenticated
+router.beforeEach((to, from, next) => {
+    if (to.meta.requiresAuth) {
+        const token = localStorage.getItem('token')
+        if (!token) {
+            next({ name: 'Login', query: { redirect: to.fullPath } })
+        } else {
+            next()
+        }
+    } else {
+        next()
+    }
 })
 
 export default router

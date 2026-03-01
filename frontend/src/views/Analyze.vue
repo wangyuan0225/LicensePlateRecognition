@@ -47,13 +47,10 @@
 
         <div class="image-viewer" :class="{ 'has-image': previewUrl }">
           <template v-if="previewUrl">
-            <img :src="previewUrl" class="preview-image" alt="Preview" />
+            <img :src="result ? result.resultImageUrl : previewUrl" class="preview-image" alt="Preview" />
 
-            <!-- Simulated bounding box for demonstration -->
-            <div v-if="result && !analyzing" class="bounding-box-overlay">
-              <div class="box">
-                <span class="label">{{ result.plateNumber }} ({{ (result.confidence * 100).toFixed(1) }}%)</span>
-              </div>
+            <div v-if="result && !analyzing" class="result-badge">
+              算法输出图像 (包含检测框)
             </div>
           </template>
           <template v-else>
@@ -72,16 +69,16 @@
             <span class="value highlight">{{ result.plateNumber }}</span>
           </div>
           <div class="result-item">
-            <span class="label">{{ $t('analyze.confidence') }}</span>
-            <span class="value">{{ (result.confidence * 100).toFixed(2) }}%</span>
+            <span class="label">车牌属性</span>
+            <span class="value">{{ result.plateType || '-' }}</span>
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.modelUsed') }}</span>
-            <span class="value">{{ getModelName(result.model) }}</span>
+            <span class="value">{{ getModelName(selectedModel) }}</span>
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.timeTaken') }}</span>
-            <span class="value">{{ result.processingTime }}ms</span>
+            <span class="value">{{ result.processingTimeMs }}ms</span>
           </div>
         </div>
       </div>
@@ -122,26 +119,50 @@ const handleFileChange = (file) => {
   }
 }
 
-const startAnalysis = () => {
+const startAnalysis = async () => {
   if (!selectedFile.value) return
 
   analyzing.value = true
   result.value = null
 
-  // Simulate API call processing
-  setTimeout(() => {
-    analyzing.value = false
-    ElMessage.success('Analysis completed successfully.')
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+    formData.append('modelType', selectedModel.value)
 
-    // Mock result data
-    result.value = {
-      plateNumber: '沪A·88888',
-      confidence: 0.985,
-      model: selectedModel.value,
-      processingTime: 124,
-      // Bounding box coords could go here in a real app
+    const token = localStorage.getItem('token')
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
     }
-  }, 1500)
+
+    const res = await fetch('/api/v1/analyze/upload', {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const data = await res.json()
+
+    if (data.code === 200) {
+      ElMessage.success('识别完成')
+      result.value = {
+        plateNumber: data.data.plateNumber,
+        plateType: data.data.plateType,
+        confidence: data.data.confidence,
+        processingTimeMs: data.data.processingTimeMs,
+        resultImageUrl: data.data.resultImageUrl,
+        originalImageUrl: data.data.originalImageUrl,
+      }
+    } else {
+      ElMessage.error(data.message || '识别失败')
+    }
+  } catch (err) {
+    ElMessage.error('网络请求失败，请检查后端是否启动')
+    console.error(err)
+  } finally {
+    analyzing.value = false
+  }
 }
 </script>
 
@@ -264,39 +285,17 @@ const startAnalysis = () => {
   color: var(--text-secondary);
 }
 
-.bounding-box-overlay {
+.result-badge {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Mock positioning for the demo */
-.bounding-box-overlay .box {
-  width: 30%;
-  height: 20%;
-  border: 2px solid var(--success-color);
-  background: rgba(15, 123, 108, 0.1);
-  position: relative;
-  border-radius: 2px;
-}
-
-.bounding-box-overlay .label {
-  position: absolute;
-  top: -28px;
-  left: -2px;
+  top: 8px;
+  right: 8px;
   background: var(--success-color);
   color: white;
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 4px 12px;
   border-radius: 4px;
-  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .results-data {
