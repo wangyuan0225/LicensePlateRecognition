@@ -28,4 +28,4 @@ app:
     base-dir: ../algorithm/yolo26
     python-path: ../algorithm/yolo26/.venv/Scripts/python.exe
     script-name: detect_rec_plate.py
-    result-dir: ../algorithm/yolo26/result
+    result-dir: upload/results
