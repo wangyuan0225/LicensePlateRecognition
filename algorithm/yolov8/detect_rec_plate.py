@@ -243,5 +243,6 @@ if __name__ == "__main__":
         count+=1
         cv2.imwrite(save_img_path,ori_img)               #op
         # print(result_list)
-    print(f"sumTime time is {time.time()-time_begin} s, average pic time is {time_all/(len(file_list)-1)}")
-     
+    avg_time = time_all / (len(file_list) - 1) if len(file_list) > 1 else time_all
+    print(f"sumTime time is {time.time()-time_begin} s, average pic time is {avg_time}")
+    

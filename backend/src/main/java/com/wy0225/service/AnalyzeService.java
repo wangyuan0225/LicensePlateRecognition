@@ -65,7 +65,7 @@ public class AnalyzeService {
         Path tempOutputDir = Files.createTempDirectory("lpr_output_");
         Files.copy(savedFilePath, tempInputDir.resolve(savedFilename), StandardCopyOption.REPLACE_EXISTING);
 
-        // 4. Build command
+        // 4. Build command — differs between yolo26 and yolov8
         File algorithmDir = new File(props.getBaseDir()).getAbsoluteFile();
         File pythonExe = new File(props.getPythonPath()).getAbsoluteFile();
         String scriptPath = new File(algorithmDir, props.getScriptName()).getAbsolutePath();
@@ -73,12 +73,26 @@ public class AnalyzeService {
         List<String> command = new ArrayList<>();
         command.add(pythonExe.getAbsolutePath());
         command.add(scriptPath);
-        command.add("--image_path");
-        command.add(tempInputDir.toAbsolutePath().toString());
-        command.add("--output");
-        command.add(tempOutputDir.toAbsolutePath().toString());
-        command.add("--device");
-        command.add("cpu");
+
+        if ("yolov8".equals(algo)) {
+            // yolov8 requires explicit model paths; does NOT support --device flag
+            command.add("--detect_model");
+            command.add(props.getDetectModel() != null ? props.getDetectModel() : "weights/yolov8s.pt");
+            command.add("--rec_model");
+            command.add(props.getRecModel() != null ? props.getRecModel() : "weights/plate_rec_color.pth");
+            command.add("--image_path");
+            command.add(tempInputDir.toAbsolutePath().toString());
+            command.add("--output");
+            command.add(tempOutputDir.toAbsolutePath().toString());
+        } else {
+            // yolo26 accepts --device but no explicit model path args
+            command.add("--image_path");
+            command.add(tempInputDir.toAbsolutePath().toString());
+            command.add("--output");
+            command.add(tempOutputDir.toAbsolutePath().toString());
+            command.add("--device");
+            command.add("cpu");
+        }
 
         log.info("[{}] Executing: {}", algo, String.join(" ", command));
 
@@ -180,43 +194,53 @@ public class AnalyzeService {
 
     /**
      * Parse yolov8 STDOUT.
-     * The script calls draw_result which does: print(result_str)
-     * result_str format: "皖1149885 绿色 " or "皖A12345 蓝色双层 "
-     * Also prints timing: "sumTime time is X s, average pic time is Y"
+     *
+     * The script prints: print(count, pic_, end=" ") then draw_result calls
+     * print(result_str)
+     * Because end=" " has no newline, both end up on ONE line, e.g.:
+     * 0 C:\...\file.png 皖1149885 绿色双层
+     *
+     * Strategy: use regex to scan every line for the Chinese plate pattern
+     * directly,
+     * rather than relying on line filtering (which was storing the full path as
+     * plateColor).
+     *
+     * Plate pattern: Chinese province char + 5-8 alphanumeric/dot chars,
+     * then a space, then 2-4 Chinese chars (color + optional 双层).
      */
     private ParsedResult parseYolov8Output(String output) {
         ParsedResult result = new ParsedResult();
-        String[] lines = output.split("\n");
+
+        // Pattern: Chinese char (province) + alphanumeric plate body + space + Chinese
+        // color
+        // e.g. 皖1149885 绿色双层 or 粤ZR066港 黑色
+        Pattern platePattern = Pattern.compile(
+                "([\u4e00-\u9fa5][A-Z0-9·\\.]{4,8})\\s+([\u4e00-\u9fa5]{1,4}(?:双层)?)");
 
         // Timing line: "sumTime time is X s, average pic time is Y"
         Pattern timePattern = Pattern.compile("sumTime time is ([\\d.]+) s");
 
-        for (String line : lines) {
+        for (String line : output.split("\\n")) {
             line = line.trim();
 
-            // Timing
+            // Extract timing
             Matcher tm = timePattern.matcher(line);
             if (tm.find()) {
                 result.timeMs = Double.parseDouble(tm.group(1)) * 1000;
-                continue;
             }
 
-            // The plate result line: printed by draw_result's print(result_str)
-            // Looks like: "皖1149885 绿色 " or "皖A12345 黄色双层 粤B12345 蓝色 "
-            // It won't match the [x/x] pattern or model param line
-            if (!line.isEmpty()
-                    && !line.startsWith("[")
-                    && !line.contains("params")
-                    && !line.contains("sumTime")
-                    && !line.contains("\\")
-                    && !line.contains("/")
-                    && !line.matches("\\d+.*")) {
-
-                // Split multiple plates by 2+ spaces
-                String[] plateTokens = line.trim().split("\\s{2,}");
-                if (plateTokens.length > 0 && !plateTokens[0].isBlank()) {
-                    parsePlateInfo(plateTokens[0].trim(), result);
-                    result.detectCount++;
+            // Extract first plate match from any line (works even when path+plate on same
+            // line)
+            if (result.plateNumber == null) {
+                Matcher pm = platePattern.matcher(line);
+                if (pm.find()) {
+                    String plateNum = pm.group(1);
+                    String colorType = pm.group(2).trim();
+                    result.plateNumber = plateNum;
+                    result.plateType = colorType;
+                    result.plateColor = colorType.replace("双层", "").trim();
+                    result.detectCount = 1;
+                    log.info("[yolov8] Parsed plate: {} / {}", plateNum, colorType);
                 }
             }
         }

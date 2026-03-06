@@ -35,3 +35,5 @@ app:
       base-dir: ../algorithm/yolov8
       python-path: ../algorithm/yolov8/.venv/Scripts/python.exe
       script-name: detect_rec_plate.py
+      detect-model: weights/yolov8s.pt
+      rec-model: weights/plate_rec_color.pth
