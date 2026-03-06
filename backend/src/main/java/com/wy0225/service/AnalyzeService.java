@@ -1,10 +1,10 @@
 package com.wy0225.service;
 
+import com.wy0225.config.AlgorithmConfig;
 import com.wy0225.entity.RecognitionRecord;
 import com.wy0225.repository.RecognitionRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,34 +20,30 @@ import java.util.regex.Pattern;
 public class AnalyzeService {
 
     private final RecognitionRecordRepository recordRepository;
-
-    @Value("${app.upload.dir}")
-    private String uploadDir;
-
-    @Value("${app.algorithm.base-dir}")
-    private String algorithmBaseDir;
-
-    @Value("${app.algorithm.python-path}")
-    private String pythonPath;
-
-    @Value("${app.algorithm.script-name}")
-    private String scriptName;
-
-    @Value("${app.algorithm.result-dir}")
-    private String resultDir;
+    private final AlgorithmConfig algorithmConfig;
 
     /**
      * Core recognition flow:
-     * 1. Save uploaded image to upload dir
-     * 2. Copy it to algorithm imgs dir (so the script can process it)
-     * 3. Run Python script via ProcessBuilder
-     * 4. Parse STDOUT output
-     * 5. Save record to DB
-     * 6. Return result map
+     * 1. Save uploaded image to per-user upload dir
+     * 2. Copy to temp dir, run Python script via ProcessBuilder
+     * 3. Parse STDOUT output (format differs by algorithm)
+     * 4. Copy result image to per-user result dir
+     * 5. Save record to DB and return result map
      */
     public Map<String, Object> analyzeImage(MultipartFile file, String modelType, Long userId) throws Exception {
-        // 1. Ensure per-user directories exist (use absolute paths to avoid Tomcat temp
-        // dir issue)
+        // Normalize modelType; default to yolo26
+        String algo = (modelType != null && !modelType.isBlank()) ? modelType.toLowerCase() : "yolo26";
+
+        AlgorithmConfig.AlgorithmProps props = algorithmConfig.getAlgorithms().get(algo);
+        if (props == null) {
+            throw new RuntimeException("不支持的算法: " + algo + "，可选: " + algorithmConfig.getAlgorithms().keySet());
+        }
+
+        String uploadDir = algorithmConfig.getUpload().getDir();
+        String resultDir = algorithmConfig.getResult().getDir();
+
+        // 1. Ensure per-user directories exist (absolute paths to avoid Tomcat temp
+        // dir)
         Path uploadPath = Paths.get(uploadDir, userId.toString()).toAbsolutePath();
         Files.createDirectories(uploadPath);
         Path resultPath = Paths.get(resultDir, userId.toString()).toAbsolutePath();
@@ -61,22 +57,18 @@ public class AnalyzeService {
         }
         String savedFilename = UUID.randomUUID().toString() + extension;
         Path savedFilePath = uploadPath.resolve(savedFilename);
-        // Use absolute file path to prevent Spring resolving to Tomcat temp dir
         file.transferTo(savedFilePath.toAbsolutePath().toFile());
-        log.info("Image saved to: {}", savedFilePath.toAbsolutePath());
+        log.info("[{}] Image saved to: {}", algo, savedFilePath.toAbsolutePath());
 
-        // 3. Create a temp input dir for this single image, and a temp output dir
+        // 3. Create temp input/output dirs
         Path tempInputDir = Files.createTempDirectory("lpr_input_");
         Path tempOutputDir = Files.createTempDirectory("lpr_output_");
-        Path tempImagePath = tempInputDir.resolve(savedFilename);
-        Files.copy(savedFilePath, tempImagePath, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(savedFilePath, tempInputDir.resolve(savedFilename), StandardCopyOption.REPLACE_EXISTING);
 
-        // 4. Build the ProcessBuilder command
-        File algorithmDir = new File(algorithmBaseDir).getAbsoluteFile();
-        File pythonExe = new File(pythonPath).getAbsoluteFile();
-
-        // Use absolute paths
-        String scriptPath = new File(algorithmDir, scriptName).getAbsolutePath();
+        // 4. Build command
+        File algorithmDir = new File(props.getBaseDir()).getAbsoluteFile();
+        File pythonExe = new File(props.getPythonPath()).getAbsoluteFile();
+        String scriptPath = new File(algorithmDir, props.getScriptName()).getAbsolutePath();
 
         List<String> command = new ArrayList<>();
         command.add(pythonExe.getAbsolutePath());
@@ -88,58 +80,48 @@ public class AnalyzeService {
         command.add("--device");
         command.add("cpu");
 
-        log.info("Executing command: {}", String.join(" ", command));
+        log.info("[{}] Executing: {}", algo, String.join(" ", command));
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.directory(algorithmDir);
         processBuilder.redirectErrorStream(true);
-
-        // Set environment to ensure UTF-8
-        Map<String, String> env = processBuilder.environment();
-        env.put("PYTHONIOENCODING", "utf-8");
+        processBuilder.environment().put("PYTHONIOENCODING", "utf-8");
 
         // 5. Execute and capture output
         Process process = processBuilder.start();
-
         StringBuilder outputBuilder = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream(), "UTF-8"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 outputBuilder.append(line).append("\n");
-                log.info("Python output: {}", line);
+                log.info("[{}] output: {}", algo, line);
             }
         }
 
         int exitCode = process.waitFor();
         String output = outputBuilder.toString();
-        log.info("Python process exited with code: {}", exitCode);
+        log.info("[{}] Process exited with code: {}", algo, exitCode);
 
         if (exitCode != 0) {
-            // Clean up temp dirs
             deleteDirectory(tempInputDir);
             deleteDirectory(tempOutputDir);
             throw new RuntimeException("算法引擎执行失败，退出码: " + exitCode + "\n输出: " + output);
         }
 
-        // 6. Parse the STDOUT output
-        // Format: [1/1] filename.jpg | det=1 | plates=皖1149885 绿色双层 | time=287.8ms |
-        // save=path
-        ParsedResult parsed = parseOutput(output);
+        // 6. Parse STDOUT (different format per algorithm)
+        ParsedResult parsed = "yolov8".equals(algo)
+                ? parseYolov8Output(output)
+                : parseYolo26Output(output);
 
-        // 7. Copy result image from temp output dir to the actual result dir
-        String resultImageFilename = savedFilename; // Use same filename
-        if (parsed.saveFilename != null && !parsed.saveFilename.isEmpty()) {
-            // Check if the result file exists in temp output dir
-            Path tempResultFile = tempOutputDir.resolve(savedFilename);
-            if (Files.exists(tempResultFile)) {
-                Path finalResultPath = resultPath.resolve(savedFilename);
-                Files.copy(tempResultFile, finalResultPath, StandardCopyOption.REPLACE_EXISTING);
-                resultImageFilename = savedFilename;
-            }
+        // 7. Copy result image from temp output to actual result dir
+        String resultImageFilename = savedFilename;
+        Path tempResultFile = tempOutputDir.resolve(savedFilename);
+        if (Files.exists(tempResultFile)) {
+            Path finalResultPath = resultPath.resolve(savedFilename);
+            Files.copy(tempResultFile, finalResultPath, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // Clean up temp dirs
         deleteDirectory(tempInputDir);
         deleteDirectory(tempOutputDir);
 
@@ -151,7 +133,7 @@ public class AnalyzeService {
         record.setPlateNumber(parsed.plateNumber);
         record.setPlateColor(parsed.plateColor);
         record.setPlateType(parsed.plateType);
-        record.setModelType(modelType != null ? modelType : "yolo26");
+        record.setModelType(algo);
         record.setProcessingTimeMs(parsed.timeMs);
         record.setDetectCount(parsed.detectCount);
         recordRepository.save(record);
@@ -162,7 +144,8 @@ public class AnalyzeService {
         result.put("plateNumber", parsed.plateNumber != null ? parsed.plateNumber : "-");
         result.put("plateColor", parsed.plateColor != null ? parsed.plateColor : "-");
         result.put("plateType", parsed.plateType != null ? parsed.plateType : "-");
-        result.put("confidence", 0.95); // The algorithm doesn't output confidence in stdout, use default
+        result.put("modelType", algo);
+        result.put("confidence", 0.95);
         result.put("processingTimeMs", parsed.timeMs != null ? parsed.timeMs : 0);
         result.put("detectCount", parsed.detectCount);
         result.put("thumbnailUrl", "/static/upload/" + userId + "/" + savedFilename);
@@ -173,63 +156,93 @@ public class AnalyzeService {
     }
 
     /**
-     * Parse the Python script STDOUT.
-     * Example line: [1/9] double_lv.png | det=1 | plates=皖1149885 绿色双层 |
-     * time=287.8ms | save=result\double_lv.png
+     * Parse yolo26 STDOUT.
+     * Example: [1/9] double_lv.png | det=1 | plates=皖1149885 绿色双层 | time=287.8ms |
+     * save=result\xxx.png
      */
-    private ParsedResult parseOutput(String output) {
+    private ParsedResult parseYolo26Output(String output) {
         ParsedResult result = new ParsedResult();
-        String[] lines = output.split("\n");
-
-        // Pattern for the main result line
-        Pattern mainPattern = Pattern.compile(
+        Pattern pattern = Pattern.compile(
                 "\\[\\d+/\\d+\\]\\s+\\S+\\s+\\|\\s+det=(\\d+)\\s+\\|\\s+plates=(.+?)\\s+\\|\\s+time=([\\d.]+)ms\\s+\\|\\s+save=(.+)");
 
-        for (String line : lines) {
-            line = line.trim();
-            Matcher matcher = mainPattern.matcher(line);
-            if (matcher.find()) {
-                result.detectCount = Integer.parseInt(matcher.group(1));
-                String platesStr = matcher.group(2).trim();
-                result.timeMs = Double.parseDouble(matcher.group(3));
-                result.saveFilename = matcher.group(4).trim();
-
-                // Parse plates string: e.g. "皖1149885 绿色双层" or "皖1149885 绿色"
-                parsePlateInfo(platesStr, result);
-                break; // Take the first detection line
+        for (String line : output.split("\n")) {
+            Matcher m = pattern.matcher(line.trim());
+            if (m.find()) {
+                result.detectCount = Integer.parseInt(m.group(1));
+                result.timeMs = Double.parseDouble(m.group(3));
+                result.saveFilename = m.group(4).trim();
+                parsePlateInfo(m.group(2).trim(), result);
+                break;
             }
         }
-
         return result;
     }
 
     /**
-     * Parse plate info from the plates field.
-     * Could be: "皖1149885 绿色双层" or "皖1149885 绿色" or "-"
+     * Parse yolov8 STDOUT.
+     * The script calls draw_result which does: print(result_str)
+     * result_str format: "皖1149885 绿色 " or "皖A12345 蓝色双层 "
+     * Also prints timing: "sumTime time is X s, average pic time is Y"
+     */
+    private ParsedResult parseYolov8Output(String output) {
+        ParsedResult result = new ParsedResult();
+        String[] lines = output.split("\n");
+
+        // Timing line: "sumTime time is X s, average pic time is Y"
+        Pattern timePattern = Pattern.compile("sumTime time is ([\\d.]+) s");
+
+        for (String line : lines) {
+            line = line.trim();
+
+            // Timing
+            Matcher tm = timePattern.matcher(line);
+            if (tm.find()) {
+                result.timeMs = Double.parseDouble(tm.group(1)) * 1000;
+                continue;
+            }
+
+            // The plate result line: printed by draw_result's print(result_str)
+            // Looks like: "皖1149885 绿色 " or "皖A12345 黄色双层 粤B12345 蓝色 "
+            // It won't match the [x/x] pattern or model param line
+            if (!line.isEmpty()
+                    && !line.startsWith("[")
+                    && !line.contains("params")
+                    && !line.contains("sumTime")
+                    && !line.contains("\\")
+                    && !line.contains("/")
+                    && !line.matches("\\d+.*")) {
+
+                // Split multiple plates by 2+ spaces
+                String[] plateTokens = line.trim().split("\\s{2,}");
+                if (plateTokens.length > 0 && !plateTokens[0].isBlank()) {
+                    parsePlateInfo(plateTokens[0].trim(), result);
+                    result.detectCount++;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Parse plate info from plates field.
+     * e.g. "皖1149885 绿色双层" → number=皖1149885, color=绿色, type=绿色双层
      */
     private void parsePlateInfo(String platesStr, ParsedResult result) {
-        if (platesStr == null || platesStr.equals("-")) {
+        if (platesStr == null || platesStr.equals("-") || platesStr.isBlank()) {
             result.plateNumber = "-";
             result.plateColor = "-";
             result.plateType = "-";
             return;
         }
 
-        // The plates field can contain multiple plates separated by " | "
-        // We take the first one
         String firstPlate = platesStr.split("\\|")[0].trim();
-
-        // Pattern: plateNumber color[双层]
-        // e.g. "皖1149885 绿色双层" -> number=皖1149885, color=绿色, type=绿色双层
-        // e.g. "粤ZR066港 黑色" -> number=粤ZR066港, color=黑色
         String[] parts = firstPlate.split("\\s+", 2);
         if (parts.length >= 1) {
             result.plateNumber = parts[0];
         }
         if (parts.length >= 2) {
-            String colorAndType = parts[1];
+            String colorAndType = parts[1].trim();
             result.plateType = colorAndType;
-            // Extract just the color (remove 双层 suffix if present)
             result.plateColor = colorAndType.replace("双层", "").trim();
         }
     }

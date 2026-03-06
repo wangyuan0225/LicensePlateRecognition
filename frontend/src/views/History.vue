@@ -44,13 +44,16 @@
 
         <el-table-column prop="modelType" :label="$t('history.colModel')" min-width="140" align="center">
           <template #default="scope">
-            <span class="model-cell">{{ scope.row.modelType }}</span>
+            <el-tag :type="scope.row.modelType === 'yolov8' ? 'warning' : 'success'" size="small" effect="light">
+              {{ scope.row.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
+            </el-tag>
           </template>
         </el-table-column>
 
         <el-table-column prop="processingTimeMs" :label="$t('history.colTime')" min-width="120">
           <template #default="scope">
-            <span class="time-cell">{{ scope.row.processingTimeMs ? scope.row.processingTimeMs.toFixed(1) : '-' }}ms</span>
+            <span class="time-cell">{{ scope.row.processingTimeMs ? scope.row.processingTimeMs.toFixed(1) : '-'
+              }}ms</span>
           </template>
         </el-table-column>
 
@@ -65,9 +68,9 @@
         <el-table-column fixed="right" :label="$t('history.colActions')" width="140" align="center">
           <template #default="scope">
             <el-button link type="primary" size="small" @click="showDetail(scope.row)">{{ $t('history.actionDetails')
-              }}</el-button>
+            }}</el-button>
             <el-button link type="danger" size="small" @click="deleteRecord(scope.row)">{{ $t('history.actionDelete')
-              }}</el-button>
+            }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -96,7 +99,11 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="车牌号码">{{ detailRecord.plateNumber }}</el-descriptions-item>
             <el-descriptions-item label="车牌属性">{{ detailRecord.plateType || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="算法模型">{{ detailRecord.modelType }}</el-descriptions-item>
+            <el-descriptions-item label="算法模型">
+              <el-tag :type="detailRecord.modelType === 'yolov8' ? 'warning' : 'success'" size="small">
+                {{ detailRecord.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
+              </el-tag>
+            </el-descriptions-item>
             <el-descriptions-item label="识别耗时">{{ detailRecord.processingTimeMs ?
               detailRecord.processingTimeMs.toFixed(1) : '-' }}ms</el-descriptions-item>
             <el-descriptions-item label="识别时间">{{ detailRecord.createdAt }}</el-descriptions-item>

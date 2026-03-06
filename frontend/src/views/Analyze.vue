@@ -13,9 +13,8 @@
         <el-form label-position="top">
           <el-form-item :label="$t('analyze.modelLabel')">
             <el-select v-model="selectedModel" class="model-select" :placeholder="$t('analyze.modelPlaceholder')">
-              <el-option :label="$t('analyze.modelYoloFast')" value="yolov8_fast" />
-              <el-option :label="$t('analyze.modelYoloAcc')" value="yolov8_acc" />
-              <el-option :label="$t('analyze.modelResNet')" value="resnet50" />
+              <el-option label="YOLO26（默认推荐）" value="yolo26" />
+              <el-option label="YOLOv8" value="yolov8" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -74,7 +73,11 @@
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.modelUsed') }}</span>
-            <span class="value">{{ getModelName(selectedModel) }}</span>
+            <span class="value">
+              <el-tag :type="result.modelType === 'yolov8' ? 'warning' : 'success'" size="small">
+                {{ result.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
+              </el-tag>
+            </span>
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.timeTaken') }}</span>
@@ -94,20 +97,11 @@ import { ElMessage } from 'element-plus'
 
 const { t } = useI18n()
 
-const selectedModel = ref('yolov8_fast')
+const selectedModel = ref('yolo26')
 const previewUrl = ref('')
 const selectedFile = ref(null)
 const analyzing = ref(false)
 const result = ref(null)
-
-const getModelName = (val) => {
-  const map = {
-    'yolov8_fast': t('analyze.modelYoloFast'),
-    'yolov8_acc': t('analyze.modelYoloAcc'),
-    'resnet50': t('analyze.modelResNet')
-  }
-  return map[val] || val
-}
 
 const handleFileChange = (file) => {
   if (file.raw.type.startsWith('image/')) {
@@ -151,6 +145,7 @@ const startAnalysis = async () => {
         plateType: data.data.plateType,
         confidence: data.data.confidence,
         processingTimeMs: data.data.processingTimeMs,
+        modelType: data.data.modelType,
         resultImageUrl: data.data.resultImageUrl,
         originalImageUrl: data.data.originalImageUrl,
       }

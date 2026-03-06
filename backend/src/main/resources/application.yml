@@ -24,8 +24,14 @@ app:
     expiration: 86400000  # 24 hours in ms
   upload:
     dir: upload/images
-  algorithm:
-    base-dir: ../algorithm/yolo26
-    python-path: ../algorithm/yolo26/.venv/Scripts/python.exe
-    script-name: detect_rec_plate.py
-    result-dir: upload/results
+  result:
+    dir: upload/results
+  algorithms:
+    yolo26:
+      base-dir: ../algorithm/yolo26
+      python-path: ../algorithm/yolo26/.venv/Scripts/python.exe
+      script-name: detect_rec_plate.py
+    yolov8:
+      base-dir: ../algorithm/yolov8
+      python-path: ../algorithm/yolov8/.venv/Scripts/python.exe
+      script-name: detect_rec_plate.py
