@@ -19,7 +19,24 @@
           </el-form-item>
         </el-form>
 
-        <div class="upload-area">
+        <!-- Input Mode Toggle -->
+        <div class="input-mode-toggle">
+          <el-radio-group v-model="inputMode" size="default" @change="onInputModeChange">
+            <el-radio-button value="upload">
+              <el-icon style="margin-right:4px">
+                <UploadFilled />
+              </el-icon>上传图片
+            </el-radio-button>
+            <el-radio-button value="camera">
+              <el-icon style="margin-right:4px">
+                <VideoCameraFilled />
+              </el-icon>拍照识别
+            </el-radio-button>
+          </el-radio-group>
+        </div>
+
+        <!-- Upload Mode -->
+        <div v-if="inputMode === 'upload'" class="upload-area">
           <el-upload class="plate-uploader" drag action="#" :auto-upload="false" :show-file-list="false"
             :on-change="handleFileChange" accept="image/*">
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
@@ -32,6 +49,37 @@
               </div>
             </template>
           </el-upload>
+        </div>
+
+        <!-- Camera Mode -->
+        <div v-if="inputMode === 'camera'" class="camera-area">
+          <div class="camera-preview-wrapper">
+            <video v-show="cameraActive && !capturedPhoto" ref="videoRef" autoplay playsinline muted
+              class="camera-video" />
+            <img v-if="capturedPhoto" :src="capturedPhoto" class="camera-snapshot" alt="Captured" />
+            <div v-if="!cameraActive && !capturedPhoto" class="camera-placeholder">
+              <el-icon :size="36" color="#aaa">
+                <VideoCameraFilled />
+              </el-icon>
+              <p>点击下方按钮开启相机</p>
+            </div>
+          </div>
+
+          <div class="camera-controls">
+            <el-button v-if="!cameraActive && !capturedPhoto" type="primary" @click="startCamera"
+              :icon="VideoCameraFilled">
+              开启相机
+            </el-button>
+            <div v-if="cameraActive && !capturedPhoto" class="capture-btn" @click="capturePhoto">
+              <span class="capture-inner"></span>
+            </div>
+            <div v-if="cameraActive && !capturedPhoto" class="close-camera-btn" @click="stopCamera">
+              <span class="close-x">✕</span>
+            </div>
+            <el-button v-if="capturedPhoto" type="warning" @click="retakePhoto" plain>
+              重新拍照
+            </el-button>
+          </div>
         </div>
 
         <el-button type="primary" class="analyze-btn" :disabled="!previewUrl" :loading="analyzing"
@@ -86,13 +134,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Hidden canvas for capturing camera frame -->
+    <canvas ref="canvasRef" style="display:none" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { UploadFilled, Picture } from '@element-plus/icons-vue'
+import { UploadFilled, Picture, VideoCameraFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const { t } = useI18n()
@@ -103,16 +154,144 @@ const selectedFile = ref(null)
 const analyzing = ref(false)
 const result = ref(null)
 
+// --- Input mode ---
+const inputMode = ref('upload')
+
+// --- Camera state ---
+const cameraActive = ref(false)
+const capturedPhoto = ref('')
+const videoRef = ref(null)
+const canvasRef = ref(null)
+let mediaStream = null
+
+const onInputModeChange = () => {
+  // Cleanup when switching modes
+  stopCamera()
+  capturedPhoto.value = ''
+  result.value = null
+  if (inputMode.value === 'upload') {
+    // Keep previewUrl if file was selected
+  } else {
+    previewUrl.value = ''
+    selectedFile.value = null
+  }
+}
+
+// --- Upload mode ---
 const handleFileChange = (file) => {
   if (file.raw.type.startsWith('image/')) {
     selectedFile.value = file.raw
     previewUrl.value = URL.createObjectURL(file.raw)
-    result.value = null // Reset previous result
+    result.value = null
   } else {
     ElMessage.error('Please upload a valid image file.')
   }
 }
 
+// --- Camera mode ---
+const startCamera = async () => {
+  try {
+    // Prefer rear camera for phone, any camera for desktop
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    }
+    mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+    if (videoRef.value) {
+      videoRef.value.srcObject = mediaStream
+    }
+    cameraActive.value = true
+    capturedPhoto.value = ''
+    previewUrl.value = ''
+    result.value = null
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      ElMessage.error('相机权限被拒绝，请在浏览器设置中允许使用相机')
+    } else if (err.name === 'NotFoundError') {
+      ElMessage.error('未检测到摄像头设备')
+    } else {
+      ElMessage.error('无法打开相机: ' + err.message)
+    }
+  }
+}
+
+const stopCamera = () => {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop())
+    mediaStream = null
+  }
+  if (videoRef.value) {
+    videoRef.value.srcObject = null
+  }
+  cameraActive.value = false
+}
+
+const capturePhoto = () => {
+  const video = videoRef.value
+  const canvas = canvasRef.value
+  if (!video || !canvas) return
+
+  // To match CSS object-fit: cover, we need to calculate the actual visible area
+  const videoRatio = video.videoWidth / video.videoHeight
+  const elementRatio = video.clientWidth / video.clientHeight
+
+  let sourceX = 0
+  let sourceY = 0
+  let sourceWidth = video.videoWidth
+  let sourceHeight = video.videoHeight
+
+  if (videoRatio > elementRatio) {
+    // Video is wider than element -> crop sides
+    sourceWidth = video.videoHeight * elementRatio
+    sourceX = (video.videoWidth - sourceWidth) / 2
+  } else {
+    // Video is taller than element -> crop top/bottom
+    sourceHeight = video.videoWidth / elementRatio
+    sourceY = (video.videoHeight - sourceHeight) / 2
+  }
+
+  // Set canvas size to the cropped resolution (high quality)
+  canvas.width = sourceWidth
+  canvas.height = sourceHeight
+  const ctx = canvas.getContext('2d')
+
+  // Draw only the cropped portion
+  ctx.drawImage(
+    video,
+    sourceX, sourceY, sourceWidth, sourceHeight, // Source Rect
+    0, 0, sourceWidth, sourceHeight              // Destination Rect
+  )
+
+  // Convert to blob and create preview
+  canvas.toBlob((blob) => {
+    if (blob) {
+      const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' })
+      selectedFile.value = file
+      capturedPhoto.value = URL.createObjectURL(blob)
+      previewUrl.value = capturedPhoto.value
+      result.value = null
+      stopCamera()
+    }
+  }, 'image/jpeg', 0.92)
+}
+
+const retakePhoto = () => {
+  capturedPhoto.value = ''
+  previewUrl.value = ''
+  selectedFile.value = null
+  result.value = null
+  startCamera()
+}
+
+// Cleanup on component unmount
+onBeforeUnmount(() => {
+  stopCamera()
+})
+
+// --- Analysis (shared by both modes) ---
 const startAnalysis = async () => {
   if (!selectedFile.value) return
 
@@ -333,5 +512,123 @@ const startAnalysis = async () => {
   .content-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* --- Input mode toggle --- */
+.input-mode-toggle {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.input-mode-toggle :deep(.el-radio-button__inner) {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Camera mode --- */
+.camera-area {
+  margin-top: 8px;
+  margin-bottom: 24px;
+}
+
+.camera-preview-wrapper {
+  width: 100%;
+  height: 240px;
+  background: #1a1a2e;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+
+.camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-snapshot {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.camera-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+}
+
+.camera-placeholder p {
+  font-size: 0.85rem;
+}
+
+.camera-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.capture-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+  background: transparent;
+}
+
+.capture-btn:hover {
+  transform: scale(1.08);
+}
+
+.capture-btn:active {
+  transform: scale(0.95);
+}
+
+.capture-inner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1a1a2e;
+}
+
+.close-camera-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #e53935;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.close-camera-btn:hover {
+  background: #c62828;
+  transform: scale(1.08);
+}
+
+.close-camera-btn:active {
+  transform: scale(0.95);
+}
+
+.close-x {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
 }
 </style>
