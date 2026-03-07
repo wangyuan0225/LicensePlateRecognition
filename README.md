@@ -2,6 +2,9 @@
 
 基于 **Spring Boot + Vue 3** 的全本地化多算法车牌识别平台，支持双算法引擎（YOLO26 / YOLOv8），带完整的用户认证与历史归档功能。
 
+https://www.wangyuan0225.org/ （快速）
+http://app.wangyuan0225.org/ （慢速）
+
 ---
 
 ## 项目结构
