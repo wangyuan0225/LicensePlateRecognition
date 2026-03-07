@@ -11,7 +11,7 @@
         <el-date-picker v-model="dateRange" type="daterange" range-separator="-"
           :start-placeholder="$t('history.startDate')" :end-placeholder="$t('history.endDate')" class="date-picker"
           @change="fetchData" />
-        <el-button type="primary" icon="Search" @click="fetchData">搜索</el-button>
+        <el-button type="primary" icon="Search" @click="fetchData">{{ $t('history.searchBtn') }}</el-button>
       </div>
     </div>
 
@@ -36,7 +36,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="plateType" label="车牌属性" min-width="120" align="center">
+        <el-table-column prop="plateType" :label="$t('history.colPlateType')" min-width="120" align="center">
           <template #default="scope">
             <span class="model-cell">{{ scope.row.plateType || '-' }}</span>
           </template>
@@ -53,7 +53,7 @@
         <el-table-column prop="processingTimeMs" :label="$t('history.colTime')" min-width="120">
           <template #default="scope">
             <span class="time-cell">{{ scope.row.processingTimeMs ? scope.row.processingTimeMs.toFixed(1) : '-'
-              }}ms</span>
+            }}ms</span>
           </template>
         </el-table-column>
 
@@ -83,31 +83,34 @@
     </div>
 
     <!-- Detail Dialog -->
-    <el-dialog v-model="detailVisible" title="识别详情" width="800px">
+    <el-dialog v-model="detailVisible" :title="$t('history.dialogTitle')" width="800px">
       <div v-if="detailRecord" class="detail-content">
         <div class="detail-images">
           <div class="detail-image-box">
-            <h4>原始图像</h4>
+            <h4>{{ $t('history.detailOriginal') }}</h4>
             <el-image :src="detailRecord.originalImageUrl" fit="contain" style="width: 100%; height: 300px;" />
           </div>
           <div class="detail-image-box">
-            <h4>检测结果图像</h4>
+            <h4>{{ $t('history.detailResult') }}</h4>
             <el-image :src="detailRecord.resultImageUrl" fit="contain" style="width: 100%; height: 300px;" />
           </div>
         </div>
         <div class="detail-info">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="车牌号码">{{ detailRecord.plateNumber }}</el-descriptions-item>
-            <el-descriptions-item label="车牌属性">{{ detailRecord.plateType || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="算法模型">
+            <el-descriptions-item :label="$t('history.detailPlate')">{{ detailRecord.plateNumber
+              }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('history.detailType')">{{ detailRecord.plateType || '-'
+              }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('history.detailModel')">
               <el-tag :type="detailRecord.modelType === 'yolov8' ? 'warning' : 'success'" size="small">
                 {{ detailRecord.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="识别耗时">{{ detailRecord.processingTimeMs ?
+            <el-descriptions-item :label="$t('history.detailTime')">{{ detailRecord.processingTimeMs ?
               detailRecord.processingTimeMs.toFixed(1) : '-' }}ms</el-descriptions-item>
-            <el-descriptions-item label="识别时间">{{ detailRecord.createdAt }}</el-descriptions-item>
-            <el-descriptions-item label="检测数量">{{ detailRecord.detectCount }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('history.detailDate')">{{ detailRecord.createdAt }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('history.detailCount')">{{ detailRecord.detectCount
+              }}</el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
@@ -117,8 +120,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Calendar, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const { t } = useI18n()
 
 const loading = ref(true)
 const searchQuery = ref('')
@@ -158,10 +164,10 @@ const fetchData = async () => {
       tableData.value = data.data.records
       total.value = data.data.total
     } else {
-      ElMessage.error(data.message || '获取历史记录失败')
+      ElMessage.error(data.message || t('history.fetchFail'))
     }
   } catch (err) {
-    ElMessage.error('网络请求失败，请检查后端是否启动')
+    ElMessage.error(t('history.networkFail'))
     console.error(err)
   } finally {
     loading.value = false
@@ -181,9 +187,9 @@ const showDetail = (row) => {
 
 const deleteRecord = async (row) => {
   try {
-    await ElMessageBox.confirm('确认删除该条记录？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('history.confirmDelete'), t('history.confirmTitle'), {
+      confirmButtonText: t('history.confirmOk'),
+      cancelButtonText: t('history.confirmCancel'),
       type: 'warning',
     })
 
@@ -200,14 +206,14 @@ const deleteRecord = async (row) => {
     const data = await res.json()
 
     if (data.code === 200) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('history.deleteSuccess'))
       fetchData()
     } else {
-      ElMessage.error(data.message || '删除失败')
+      ElMessage.error(data.message || t('history.deleteFail'))
     }
   } catch (err) {
     if (err !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('history.deleteFail'))
       console.error(err)
     }
   }
