@@ -35,7 +35,7 @@ public class HistoryController {
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> deleteRecord(@PathVariable Long id,
+    public Result<Void> deleteRecord(@PathVariable("id") Long id,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         Long userId = extractUserId(authHeader);
         if (userId == null) {
