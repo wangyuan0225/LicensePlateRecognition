@@ -47,7 +47,9 @@
         <el-table-column prop="modelType" :label="$t('history.colModel')" min-width="140" align="center">
           <template #default="scope">
             <span class="custom-tag">
-              {{ scope.row.modelType === 'yolov8' ? 'YOLOv8' : (scope.row.modelType === 'hyperlpr' ? 'HyperLPR' : 'YOLO26') }}
+              {{ $t(scope.row.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (scope.row.modelType === 'hyperlpr' ?
+                'analyze.modelNameHyperLPR' : (scope.row.modelType === 'fusion' ? 'analyze.modelNameFusion' :
+              'analyze.modelNameYolo26'))) }}
             </span>
           </template>
         </el-table-column>
@@ -100,21 +102,27 @@
         <div class="detail-info">
           <el-descriptions :column="2" border>
             <el-descriptions-item :label="$t('history.detailPlate')">
-              <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateNumber }}</span>
+              <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateNumber
+                }}</span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailType')">
-              <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateType || '-' }}</span>
+              <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateType ||
+                '-'
+                }}</span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailModel')">
               <span class="custom-tag">
-                {{ detailRecord.modelType === 'yolov8' ? 'YOLOv8' : (detailRecord.modelType === 'hyperlpr' ? 'HyperLPR' : 'YOLO26') }}
+                {{ $t(detailRecord.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (detailRecord.modelType ===
+                  'hyperlpr' ? 'analyze.modelNameHyperLPR' : (detailRecord.modelType === 'fusion' ?
+                    'analyze.modelNameFusion'
+                : 'analyze.modelNameYolo26'))) }}
               </span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailTime')">{{ detailRecord.processingTimeMs ?
               detailRecord.processingTimeMs.toFixed(1) : '-' }}ms</el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailDate')">{{ detailRecord.createdAt }}</el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailCount')">{{ detailRecord.detectCount
-              }}</el-descriptions-item>
+            }}</el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
@@ -237,7 +245,7 @@ const getPlateColorStyle = (text) => {
   if (!text) return { color: '#000' }
   // 车牌类型包含“牌”或“车”，一律返回黑色
   if (text.includes('牌') || text.includes('车')) return { color: '#000' }
-  
+
   if (text.includes('蓝')) return { color: '#0050b3' } // 蓝色
   if (text.includes('黄')) return { color: '#d4b106' } // 黄色
   if (text.includes('绿')) return { color: '#389e0d' } // 绿色

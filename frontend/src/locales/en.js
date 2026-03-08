@@ -116,6 +116,7 @@ export default {
         modelYoloAcc: 'YOLOv8 High Accuracy',
         modelResNet: 'ResNet50 Hybrid',
         modelHyperLPR: 'HyperLPR Fast Algorithm',
+        modelFusion: 'Nexus Multi-Model Fusion',
         dropText: 'Drop image here or',
         clickUpload: 'click to upload',
         uploadTip: 'Supports JPG, PNG up to 10MB',
@@ -127,7 +128,17 @@ export default {
         plateType: 'Color / Plate Type',
         confidence: 'Confidence',
         modelUsed: 'Model Used',
-        timeTaken: 'Time Taken'
+        timeTaken: 'Time Taken',
+        inputModeUpload: 'Upload Image',
+        inputModeCamera: 'Camera Capture',
+        cameraPlaceholder: 'Click the button below to turn on the camera',
+        btnStartCamera: 'Turn on Camera',
+        btnRetake: 'Retake Photo',
+        resultBadge: 'Algorithm Output Image (with bounding boxes)',
+        modelNameYolo26: 'YOLO26',
+        modelNameYolov8: 'YOLOv8',
+        modelNameHyperLPR: 'HyperLPR',
+        modelNameFusion: 'Nexus Fusion'
     },
     history: {
         title: 'History Records',

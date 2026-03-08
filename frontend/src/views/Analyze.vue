@@ -12,11 +12,11 @@
 
         <el-form label-position="top">
           <el-form-item :label="$t('analyze.modelLabel')">
-            <el-select v-model="selectedModel" :placeholder="$t('analyze.modelPlaceholder')"
-              class="model-select">
+            <el-select v-model="selectedModel" :placeholder="$t('analyze.modelPlaceholder')" class="model-select">
               <el-option :label="$t('analyze.modelYoloFast')" value="yolo26" />
               <el-option :label="$t('analyze.modelYoloAcc')" value="yolov8" />
               <el-option :label="$t('analyze.modelHyperLPR')" value="hyperlpr" />
+              <el-option :label="$t('analyze.modelFusion')" value="fusion" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -27,12 +27,12 @@
             <el-radio-button value="upload">
               <el-icon style="margin-right:4px">
                 <UploadFilled />
-              </el-icon>上传图片
+              </el-icon>{{ $t('analyze.inputModeUpload') }}
             </el-radio-button>
             <el-radio-button value="camera">
               <el-icon style="margin-right:4px">
                 <VideoCameraFilled />
-              </el-icon>拍照识别
+              </el-icon>{{ $t('analyze.inputModeCamera') }}
             </el-radio-button>
           </el-radio-group>
         </div>
@@ -63,14 +63,14 @@
               <el-icon :size="36" color="#aaa">
                 <VideoCameraFilled />
               </el-icon>
-              <p>点击下方按钮开启相机</p>
+              <p>{{ $t('analyze.cameraPlaceholder') }}</p>
             </div>
           </div>
 
           <div class="camera-controls">
             <el-button v-if="!cameraActive && !capturedPhoto" type="primary" @click="startCamera"
               :icon="VideoCameraFilled">
-              开启相机
+              {{ $t('analyze.btnStartCamera') }}
             </el-button>
             <div v-if="cameraActive && !capturedPhoto" class="capture-btn" @click="capturePhoto">
               <span class="capture-inner"></span>
@@ -79,7 +79,7 @@
               <span class="close-x">✕</span>
             </div>
             <el-button v-if="capturedPhoto" type="warning" @click="retakePhoto" plain>
-              重新拍照
+              {{ $t('analyze.btnRetake') }}
             </el-button>
           </div>
         </div>
@@ -99,7 +99,7 @@
             <img :src="result ? result.resultImageUrl : previewUrl" class="preview-image" alt="Preview" />
 
             <div v-if="result && !analyzing" class="result-badge">
-              算法输出图像 (包含检测框)
+              {{ $t('analyze.resultBadge') }}
             </div>
           </template>
           <template v-else>
@@ -119,13 +119,16 @@
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.plateType') }}</span>
-            <span class="value custom-tag" :style="getPlateColorStyle(result.plateType)">{{ result.plateType || '-' }}</span>
+            <span class="value custom-tag" :style="getPlateColorStyle(result.plateType)">{{ result.plateType || '-'
+            }}</span>
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.modelUsed') }}</span>
             <span class="value">
               <span class="custom-tag">
-                {{ result.modelType === 'yolov8' ? 'YOLOv8' : (result.modelType === 'hyperlpr' ? 'HyperLPR' : 'YOLO26') }}
+                {{ $t(result.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (result.modelType === 'hyperlpr' ?
+                  'analyze.modelNameHyperLPR' : (result.modelType === 'fusion' ? 'analyze.modelNameFusion' :
+                'analyze.modelNameYolo26'))) }}
               </span>
             </span>
           </div>
@@ -346,7 +349,7 @@ const getPlateColorStyle = (text) => {
   if (!text) return { color: '#000' }
   // 车牌类型包含“牌”或“车”，一律返回黑色
   if (text.includes('牌') || text.includes('车')) return { color: '#000' }
-  
+
   if (text.includes('蓝')) return { color: '#0050b3' } // 蓝色
   if (text.includes('黄')) return { color: '#d4b106' } // 黄色
   if (text.includes('绿')) return { color: '#389e0d' } // 绿色
@@ -381,6 +384,7 @@ const getPlateColorStyle = (text) => {
 .content-grid {
   display: grid;
   grid-template-columns: 380px 1fr;
+  align-items: start;
   gap: 24px;
 }
 
@@ -435,7 +439,6 @@ const getPlateColorStyle = (text) => {
   width: 100%;
   height: 48px;
   font-size: 1.05rem;
-  margin-top: auto;
 }
 
 .results-panel {
