@@ -128,7 +128,7 @@
               <span class="custom-tag">
                 {{ $t(result.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (result.modelType === 'hyperlpr' ?
                   'analyze.modelNameHyperLPR' : (result.modelType === 'fusion' ? 'analyze.modelNameFusion' :
-                'analyze.modelNameYolo26'))) }}
+                    'analyze.modelNameYolo26'))) }}
               </span>
             </span>
           </div>

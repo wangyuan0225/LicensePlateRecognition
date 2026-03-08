@@ -1,6 +1,6 @@
 <template>
   <div class="app-layout">
-    <el-config-provider :builtin-theme="'light'">
+    <el-config-provider :locale="elementLocale" :builtin-theme="'light'">
       <header class="app-header">
         <div class="header-content">
           <div class="logo" @click="$router.push('/')">
@@ -31,18 +31,26 @@
             <template v-else>
               <el-dropdown @command="handleUserCommand">
                 <span class="user-info">
-                  <el-icon><User /></el-icon>
+                  <el-icon>
+                    <User />
+                  </el-icon>
                   <span class="username-text">{{ username }}</span>
-                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  <el-icon class="el-icon--right">
+                    <ArrowDown />
+                  </el-icon>
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="changePassword">
-                      <el-icon><Lock /></el-icon>
+                      <el-icon>
+                        <Lock />
+                      </el-icon>
                       {{ $t('app.changePassword') }}
                     </el-dropdown-item>
                     <el-dropdown-item command="logout" divided>
-                      <el-icon><SwitchButton /></el-icon>
+                      <el-icon>
+                        <SwitchButton />
+                      </el-icon>
                       {{ $t('app.logout') }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -76,12 +84,17 @@ import { Monitor, CopyDocument, User, ArrowDown, SwitchButton, Lock } from '@ele
 import { ElMessage } from 'element-plus'
 import { useMessage } from '@/composables/useMessage'
 
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import en from 'element-plus/dist/locale/en.mjs'
+
 const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const message = useMessage()
 
 const currentLang = computed(() => locale.value)
+const elementLocale = computed(() => currentLang.value === 'zh' ? zhCn : en)
+
 const toggleLanguage = () => {
   locale.value = locale.value === 'zh' ? 'en' : 'zh'
 }
@@ -310,6 +323,7 @@ div.el-message.lpr-message.el-message--info .el-message__icon {
 div.el-message.lpr-message .el-message__closeBtn {
   color: #6b7280 !important;
 }
+
 div.el-message.lpr-message .el-message__closeBtn:hover {
   color: #111827 !important;
 }

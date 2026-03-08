@@ -49,7 +49,7 @@
             <span class="custom-tag">
               {{ $t(scope.row.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (scope.row.modelType === 'hyperlpr' ?
                 'analyze.modelNameHyperLPR' : (scope.row.modelType === 'fusion' ? 'analyze.modelNameFusion' :
-              'analyze.modelNameYolo26'))) }}
+                  'analyze.modelNameYolo26'))) }}
             </span>
           </template>
         </el-table-column>
@@ -103,19 +103,19 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item :label="$t('history.detailPlate')">
               <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateNumber
-                }}</span>
+              }}</span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailType')">
               <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateType ||
                 '-'
-                }}</span>
+              }}</span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailModel')">
               <span class="custom-tag">
                 {{ $t(detailRecord.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (detailRecord.modelType ===
                   'hyperlpr' ? 'analyze.modelNameHyperLPR' : (detailRecord.modelType === 'fusion' ?
                     'analyze.modelNameFusion'
-                : 'analyze.modelNameYolo26'))) }}
+                    : 'analyze.modelNameYolo26'))) }}
               </span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailTime')">{{ detailRecord.processingTimeMs ?
