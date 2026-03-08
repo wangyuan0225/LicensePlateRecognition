@@ -112,7 +112,7 @@ export default {
         configPanel: 'Configuration',
         modelLabel: 'Algorithm Model',
         modelPlaceholder: 'Select model',
-        modelYoloFast: 'YOLOv8 Fast (Recommended)',
+        modelYoloFast: 'YOLO26 Fast (Recommended)',
         modelYoloAcc: 'YOLOv8 High Accuracy',
         modelResNet: 'ResNet50 Hybrid',
         modelHyperLPR: 'HyperLPR Fast Algorithm',
