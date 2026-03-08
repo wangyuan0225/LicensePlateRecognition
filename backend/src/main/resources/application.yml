@@ -56,3 +56,7 @@ app:
       script-name: detect_rec_plate.py
       detect-model: weights/yolov8s.pt
       rec-model: weights/plate_rec_color.pth
+    hyperlpr:
+      base-dir: ../algorithm/HyperLPR
+      python-path: "D:\\Anaconda3\\python.exe"
+      script-name: predict_hyperlpr.py

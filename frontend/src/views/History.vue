@@ -30,23 +30,25 @@
 
         <el-table-column prop="plateNumber" :label="$t('history.colPlate')" min-width="180" align="center">
           <template #default="scope">
-            <el-tag size="large" type="success" effect="plain" class="plate-tag">
-              {{ scope.row.plateNumber }}
-            </el-tag>
+            <span class="custom-tag" :style="getPlateColorStyle(scope.row.plateType)">
+              {{ scope.row.plateNumber || '-' }}
+            </span>
           </template>
         </el-table-column>
 
         <el-table-column prop="plateType" :label="$t('history.colPlateType')" min-width="120" align="center">
           <template #default="scope">
-            <span class="model-cell">{{ scope.row.plateType || '-' }}</span>
+            <span class="custom-tag" :style="getPlateColorStyle(scope.row.plateType)">
+              {{ scope.row.plateType || '-' }}
+            </span>
           </template>
         </el-table-column>
 
         <el-table-column prop="modelType" :label="$t('history.colModel')" min-width="140" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.modelType === 'yolov8' ? 'warning' : 'success'" size="small" effect="light">
-              {{ scope.row.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
-            </el-tag>
+            <span class="custom-tag">
+              {{ scope.row.modelType === 'yolov8' ? 'YOLOv8' : (scope.row.modelType === 'hyperlpr' ? 'HyperLPR' : 'YOLO26') }}
+            </span>
           </template>
         </el-table-column>
 
@@ -97,14 +99,16 @@
         </div>
         <div class="detail-info">
           <el-descriptions :column="2" border>
-            <el-descriptions-item :label="$t('history.detailPlate')">{{ detailRecord.plateNumber
-              }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('history.detailType')">{{ detailRecord.plateType || '-'
-              }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('history.detailPlate')">
+              <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateNumber }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('history.detailType')">
+              <span class="custom-tag" :style="getPlateColorStyle(detailRecord.plateType)">{{ detailRecord.plateType || '-' }}</span>
+            </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailModel')">
-              <el-tag :type="detailRecord.modelType === 'yolov8' ? 'warning' : 'success'" size="small">
-                {{ detailRecord.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
-              </el-tag>
+              <span class="custom-tag">
+                {{ detailRecord.modelType === 'yolov8' ? 'YOLOv8' : (detailRecord.modelType === 'hyperlpr' ? 'HyperLPR' : 'YOLO26') }}
+              </span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailTime')">{{ detailRecord.processingTimeMs ?
               detailRecord.processingTimeMs.toFixed(1) : '-' }}ms</el-descriptions-item>
@@ -228,6 +232,19 @@ onMounted(() => {
 const tableRowClassName = ({ rowIndex }) => {
   return 'custom-table-row'
 }
+
+const getPlateColorStyle = (text) => {
+  if (!text) return { color: '#000' }
+  // 车牌类型包含“牌”或“车”，一律返回黑色
+  if (text.includes('牌') || text.includes('车')) return { color: '#000' }
+  
+  if (text.includes('蓝')) return { color: '#0050b3' } // 蓝色
+  if (text.includes('黄')) return { color: '#d4b106' } // 黄色
+  if (text.includes('绿')) return { color: '#389e0d' } // 绿色
+  if (text.includes('白')) return { color: '#595959' } // 白色
+  if (text.includes('黑')) return { color: '#000000' } // 黑色
+  return { color: '#000' }
+}
 </script>
 
 <style scoped>
@@ -300,17 +317,16 @@ const tableRowClassName = ({ rowIndex }) => {
   font-size: 0.9rem;
 }
 
-.plate-tag {
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.model-cell {
-  background: var(--bg-secondary);
-  padding: 4px 8px;
+.custom-tag {
+  display: inline-block;
+  border: 1px solid #000;
+  background-color: #fff;
+  color: #000;
+  padding: 2px 8px;
   border-radius: 4px;
-  font-size: 0.85rem;
-  border: 1px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .time-cell {

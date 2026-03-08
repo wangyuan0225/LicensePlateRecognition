@@ -12,9 +12,11 @@
 
         <el-form label-position="top">
           <el-form-item :label="$t('analyze.modelLabel')">
-            <el-select v-model="selectedModel" class="model-select" :placeholder="$t('analyze.modelPlaceholder')">
-              <el-option label="YOLO26（默认推荐）" value="yolo26" />
-              <el-option label="YOLOv8" value="yolov8" />
+            <el-select v-model="selectedModel" :placeholder="$t('analyze.modelPlaceholder')"
+              class="model-select">
+              <el-option :label="$t('analyze.modelYoloFast')" value="yolo26" />
+              <el-option :label="$t('analyze.modelYoloAcc')" value="yolov8" />
+              <el-option :label="$t('analyze.modelHyperLPR')" value="hyperlpr" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -113,18 +115,18 @@
         <div class="results-data" v-if="result && !analyzing">
           <div class="result-item">
             <span class="label">{{ $t('analyze.plateNumber') }}</span>
-            <span class="value highlight">{{ result.plateNumber }}</span>
+            <span class="value custom-tag" :style="getPlateColorStyle(result.plateType)">{{ result.plateNumber }}</span>
           </div>
           <div class="result-item">
-            <span class="label">车牌属性</span>
-            <span class="value">{{ result.plateType || '-' }}</span>
+            <span class="label">{{ $t('analyze.plateType') }}</span>
+            <span class="value custom-tag" :style="getPlateColorStyle(result.plateType)">{{ result.plateType || '-' }}</span>
           </div>
           <div class="result-item">
             <span class="label">{{ $t('analyze.modelUsed') }}</span>
             <span class="value">
-              <el-tag :type="result.modelType === 'yolov8' ? 'warning' : 'success'" size="small">
-                {{ result.modelType === 'yolov8' ? 'YOLOv8' : 'YOLO26' }}
-              </el-tag>
+              <span class="custom-tag">
+                {{ result.modelType === 'yolov8' ? 'YOLOv8' : (result.modelType === 'hyperlpr' ? 'HyperLPR' : 'YOLO26') }}
+              </span>
             </span>
           </div>
           <div class="result-item">
@@ -338,6 +340,19 @@ const startAnalysis = async () => {
   } finally {
     analyzing.value = false
   }
+}
+
+const getPlateColorStyle = (text) => {
+  if (!text) return { color: '#000' }
+  // 车牌类型包含“牌”或“车”，一律返回黑色
+  if (text.includes('牌') || text.includes('车')) return { color: '#000' }
+  
+  if (text.includes('蓝')) return { color: '#0050b3' } // 蓝色
+  if (text.includes('黄')) return { color: '#d4b106' } // 黄色
+  if (text.includes('绿')) return { color: '#389e0d' } // 绿色
+  if (text.includes('白')) return { color: '#595959' } // 白色
+  if (text.includes('黑')) return { color: '#000000' } // 黑色
+  return { color: '#000' }
 }
 </script>
 

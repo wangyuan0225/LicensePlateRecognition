@@ -27,3 +27,14 @@ app:
   mail:
     from: YOUR_EMAIL@qq.com       # 与 spring.mail.username 保持一致
     code-expire-minutes: 5
+  algorithms:
+    yolov8:
+      base-dir: ../algorithm/yolov8
+      python-path: ../algorithm/yolov8/.venv/Scripts/python.exe
+      script-name: detect_rec_plate.py
+      detect-model: weights/yolov8s.pt
+      rec-model: weights/plate_rec_color.pth
+    hyperlpr:
+      base-dir: ../algorithm/HyperLPR
+      python-path: "D:\\Anaconda3\\python.exe"
+      script-name: predict_hyperlpr.py
