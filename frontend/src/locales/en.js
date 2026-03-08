@@ -36,7 +36,18 @@ export default {
         loginBtn: 'Log in',
         registerBtn: 'Sign up',
         noAccount: "Don't have an account?",
-        hasAccount: 'Already have an account?'
+        hasAccount: 'Already have an account?',
+        ruleUsernameRequired: 'Please enter a username',
+        ruleUsernameLength: 'Length should be 3 to 20 characters',
+        ruleEmailRequired: 'Please enter an email address',
+        ruleEmailFormat: 'Please enter a valid email address',
+        rulePasswordRequired: 'Please enter a password',
+        rulePasswordLength: 'Length should be 6 to 20 characters',
+        loginSuccess: 'Logged in successfully',
+        loginFail: 'Login failed',
+        registerSuccess: 'Registered successfully, please log in',
+        registerFail: 'Registration failed',
+        networkFail: 'Network error, please check if backend is running'
     },
     analyze: {
         title: 'Analysis Center',

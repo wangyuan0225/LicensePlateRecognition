@@ -50,11 +50,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const { t } = useI18n()
 const formRef = ref(null)
 
 const isLogin = ref(true)
@@ -67,20 +69,20 @@ const form = reactive({
   rememberMe: false
 })
 
-const rules = reactive({
+const rules = computed(() => ({
   username: [
-    { required: true, message: 'Please input username', trigger: 'blur' },
-    { min: 3, max: 20, message: 'Length should be 3 to 20', trigger: 'blur' },
+    { required: true, message: t('login.ruleUsernameRequired'), trigger: 'blur' },
+    { min: 3, max: 20, message: t('login.ruleUsernameLength'), trigger: 'blur' },
   ],
   email: [
-    { required: true, message: 'Please input email address', trigger: 'blur' },
-    { type: 'email', message: 'Please input correct email address', trigger: ['blur', 'change'] },
+    { required: true, message: t('login.ruleEmailRequired'), trigger: 'blur' },
+    { type: 'email', message: t('login.ruleEmailFormat'), trigger: ['blur', 'change'] },
   ],
   password: [
-    { required: true, message: 'Please input password', trigger: 'blur' },
-    { min: 6, max: 20, message: 'Length should be 6 to 20', trigger: 'blur' },
+    { required: true, message: t('login.rulePasswordRequired'), trigger: 'blur' },
+    { min: 6, max: 20, message: t('login.rulePasswordLength'), trigger: 'blur' },
   ]
-})
+}))
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value
@@ -110,10 +112,10 @@ const handleSubmit = async () => {
           if (data.code === 200) {
             localStorage.setItem('token', data.data.token)
             localStorage.setItem('user', JSON.stringify(data.data.user))
-            ElMessage.success('登录成功')
+            ElMessage.success(t('login.loginSuccess'))
             router.push('/analyze')
           } else {
-            ElMessage.error(data.message || '登录失败')
+            ElMessage.error(data.message || t('login.loginFail'))
           }
         } else {
           // Register
@@ -129,15 +131,15 @@ const handleSubmit = async () => {
           const data = await res.json()
 
           if (data.code === 201) {
-            ElMessage.success('注册成功，请登录')
+            ElMessage.success(t('login.registerSuccess'))
             isLogin.value = true
             formRef.value?.resetFields()
           } else {
-            ElMessage.error(data.message || '注册失败')
+            ElMessage.error(data.message || t('login.registerFail'))
           }
         }
       } catch (err) {
-        ElMessage.error('网络请求失败，请检查后端是否启动')
+        ElMessage.error(t('login.networkFail'))
         console.error(err)
       } finally {
         loading.value = false

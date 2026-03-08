@@ -23,8 +23,8 @@ export default {
     login: {
         welcomeLogin: '欢迎回来',
         welcomeRegister: '创建账号',
-        loginSubtitle: '请输入您的详情以访问系统。',
-        registerSubtitle: '注册以开始分析车牌。',
+        loginSubtitle: '请输入您的详情以访问系统',
+        registerSubtitle: '注册以开始分析车牌',
         username: '用户名',
         usernamePlaceholder: '例如：john_doe',
         email: '电子邮箱',
@@ -36,7 +36,18 @@ export default {
         loginBtn: '登录',
         registerBtn: '注册',
         noAccount: '还没有账号？',
-        hasAccount: '已有账号？'
+        hasAccount: '已有账号？',
+        ruleUsernameRequired: '请输入用户名',
+        ruleUsernameLength: '长度应为 3 到 20 个字符',
+        ruleEmailRequired: '请输入电子邮箱',
+        ruleEmailFormat: '请输入正确的电子邮箱地址',
+        rulePasswordRequired: '请输入密码',
+        rulePasswordLength: '长度应为 6 到 20 个字符',
+        loginSuccess: '登录成功',
+        loginFail: '登录失败',
+        registerSuccess: '注册成功，请登录',
+        registerFail: '注册失败',
+        networkFail: '网络请求失败，请检查后端是否启动'
     },
     analyze: {
         title: '分析中心',
