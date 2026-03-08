@@ -164,3 +164,6 @@ dist
 
 # IntelliJ IDEA project files
 .idea/
+
+### 本地私密配置（含数据库密码、邮箱授权码等敏感信息）
+**/application-local.yml

@@ -22,6 +22,17 @@ const routes = [
         name: 'History',
         component: () => import('../views/History.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/forgot-password',
+        name: 'ForgotPassword',
+        component: () => import('../views/ForgotPassword.vue')
+    },
+    {
+        path: '/change-password',
+        name: 'ChangePassword',
+        component: () => import('../views/ChangePassword.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 

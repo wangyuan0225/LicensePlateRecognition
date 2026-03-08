@@ -37,9 +37,13 @@
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="logout">
+                    <el-dropdown-item command="changePassword">
+                      <el-icon><Lock /></el-icon>
+                      {{ $t('app.changePassword') }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="logout" divided>
                       <el-icon><SwitchButton /></el-icon>
-                      退出登录
+                      {{ $t('app.logout') }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -68,7 +72,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { Monitor, CopyDocument, User, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
+import { Monitor, CopyDocument, User, ArrowDown, SwitchButton, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const { t, locale } = useI18n()
@@ -102,12 +106,14 @@ const checkLoginStatus = () => {
 }
 
 const handleUserCommand = (command) => {
-  if (command === 'logout') {
+  if (command === 'changePassword') {
+    router.push('/change-password')
+  } else if (command === 'logout') {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     isLoggedIn.value = false
     username.value = ''
-    ElMessage.success('已退出登录')
+    ElMessage.success(t('app.logoutSuccess'))
     router.push('/')
   }
 }

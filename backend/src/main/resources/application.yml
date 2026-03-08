@@ -1,9 +1,14 @@
 server:
   port: 8088
 
+# 本地私密配置会自动覆盖本文件中的同名配置项
+# 克隆项目后，复制 application-local.yml.example 为 application-local.yml 并填写真实信息
 spring:
+  config:
+    import: optional:classpath:application-local.yml
+
   datasource:
-    url: jdbc:mysql://192.168.232.145:3333/lpr_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/lpr_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: root
@@ -16,6 +21,17 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  # ---- 邮件 SMTP 配置（在 application-local.yml 中覆盖以下占位符）----
+  mail:
+    host: smtp.qq.com             # 163 邮箱: smtp.163.com  QQ 邮箱: smtp.qq.com
+    port: 465
+    username: YOUR_EMAIL@qq.com   # 替换为你的发件邮箱
+    password: YOUR_AUTH_CODE      # 邮箱"授权码"（非登录密码）
+    protocol: smtps
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.ssl.enable: true
+      mail.smtp.auth: true
 
 # Application custom config
 app:
@@ -26,6 +42,9 @@ app:
     dir: upload/images
   result:
     dir: upload/results
+  mail:
+    from: YOUR_EMAIL@qq.com       # 与 spring.mail.username 保持一致
+    code-expire-minutes: 5        # 验证码有效期（分钟）
   algorithms:
     yolo26:
       base-dir: ../algorithm/yolo26
