@@ -74,10 +74,12 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { Monitor, CopyDocument, User, ArrowDown, SwitchButton, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 
 const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const message = useMessage()
 
 const currentLang = computed(() => locale.value)
 const toggleLanguage = () => {
@@ -113,7 +115,7 @@ const handleUserCommand = (command) => {
     localStorage.removeItem('user')
     isLoggedIn.value = false
     username.value = ''
-    ElMessage.success(t('app.logoutSuccess'))
+    message.success(t('app.logoutSuccess'))
     router.push('/')
   }
 }
@@ -257,5 +259,58 @@ watch(() => route.path, checkLoginStatus)
 .fade-leave-to {
   opacity: 0;
   transform: translateY(10px);
+}
+</style>
+
+<style>
+/* ============================================================
+   全局强制覆盖 ElMessage 样式 — 白底 + 黑色边框
+   ============================================================ */
+div.el-message.lpr-message {
+  background-color: #ffffff !important;
+  border: 1.5px solid #1a1a1a !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10) !important;
+  padding: 12px 20px !important;
+  width: fit-content !important;
+  max-width: 90vw !important;
+}
+
+div.el-message.lpr-message .el-message__content,
+div.el-message.lpr-message .el-message__icon {
+  font-weight: 500 !important;
+  font-size: 0.95rem !important;
+}
+
+/* warning → 红字 */
+div.el-message.lpr-message.el-message--warning .el-message__content,
+div.el-message.lpr-message.el-message--warning .el-message__icon {
+  color: #dc2626 !important;
+}
+
+/* success → 绿字 */
+div.el-message.lpr-message.el-message--success .el-message__content,
+div.el-message.lpr-message.el-message--success .el-message__icon {
+  color: #16a34a !important;
+}
+
+/* error → 深红字 */
+div.el-message.lpr-message.el-message--error .el-message__content,
+div.el-message.lpr-message.el-message--error .el-message__icon {
+  color: #b91c1c !important;
+}
+
+/* info → 深灰字 */
+div.el-message.lpr-message.el-message--info .el-message__content,
+div.el-message.lpr-message.el-message--info .el-message__icon {
+  color: #374151 !important;
+}
+
+/* 关闭按钮统一黑色 */
+div.el-message.lpr-message .el-message__closeBtn {
+  color: #6b7280 !important;
+}
+div.el-message.lpr-message .el-message__closeBtn:hover {
+  color: #111827 !important;
 }
 </style>

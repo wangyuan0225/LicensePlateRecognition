@@ -7,6 +7,7 @@ export default {
         changePassword: '修改密码',
         logout: '退出登录',
         logoutSuccess: '已退出登录',
+        notLoggedIn: '请先登录后再访问该页面',
         footer: '© 2026 LPR Vision Project. 保留所有权利。'
     },
     home: {

@@ -33,3 +33,73 @@ a,
     padding: 0 2rem;
   }
 }
+
+/* ============================================================
+   自定义 ElMessage 样式 — 白底 + 黑色边框，与应用设计语言统一
+   ============================================================ */
+.el-message.lpr-message {
+  --el-message-bg-color: #ffffff !important;
+  --el-message-border-color: #1a1a1a !important;
+  background-color: var(--el-message-bg-color) !important;
+  border: 1.5px solid var(--el-message-border-color) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10) !important;
+  padding: 12px 20px !important;
+  min-width: 280px !important;
+}
+
+/* 覆盖内部所有文字和图标的通用样式 */
+.el-message.lpr-message .el-message__content,
+.el-message.lpr-message .el-message__icon {
+  font-weight: 500 !important;
+  font-size: 0.95rem !important;
+}
+
+/* warning → 红字（未登录等警告场景） */
+.el-message.lpr-message.el-message--warning {
+  --el-message-text-color: #dc2626 !important;
+}
+
+.el-message.lpr-message.el-message--warning .el-message__content,
+.el-message.lpr-message.el-message--warning .el-message__icon {
+  color: var(--el-message-text-color) !important;
+}
+
+/* success → 绿字 */
+.el-message.lpr-message.el-message--success {
+  --el-message-text-color: #16a34a !important;
+}
+
+.el-message.lpr-message.el-message--success .el-message__content,
+.el-message.lpr-message.el-message--success .el-message__icon {
+  color: var(--el-message-text-color) !important;
+}
+
+/* error → 深红字 */
+.el-message.lpr-message.el-message--error {
+  --el-message-text-color: #b91c1c !important;
+}
+
+.el-message.lpr-message.el-message--error .el-message__content,
+.el-message.lpr-message.el-message--error .el-message__icon {
+  color: var(--el-message-text-color) !important;
+}
+
+/* info → 深灰字 */
+.el-message.lpr-message.el-message--info {
+  --el-message-text-color: #374151 !important;
+}
+
+.el-message.lpr-message.el-message--info .el-message__content,
+.el-message.lpr-message.el-message--info .el-message__icon {
+  color: var(--el-message-text-color) !important;
+}
+
+/* 关闭按钮统一黑色 */
+.el-message.lpr-message .el-message__closeBtn {
+  color: #6b7280 !important;
+}
+
+.el-message.lpr-message .el-message__closeBtn:hover {
+  color: #111827 !important;
+}

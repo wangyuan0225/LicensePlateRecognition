@@ -122,9 +122,11 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Calendar, Search } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 
 const { t } = useI18n()
+const message = useMessage()
 
 const loading = ref(true)
 const searchQuery = ref('')
@@ -164,10 +166,10 @@ const fetchData = async () => {
       tableData.value = data.data.records
       total.value = data.data.total
     } else {
-      ElMessage.error(data.message || t('history.fetchFail'))
+      message.error(data.message || t('history.fetchFail'))
     }
   } catch (err) {
-    ElMessage.error(t('history.networkFail'))
+    message.error(t('history.networkFail'))
     console.error(err)
   } finally {
     loading.value = false
@@ -206,14 +208,14 @@ const deleteRecord = async (row) => {
     const data = await res.json()
 
     if (data.code === 200) {
-      ElMessage.success(t('history.deleteSuccess'))
+      message.success(t('history.deleteSuccess'))
       fetchData()
     } else {
-      ElMessage.error(data.message || t('history.deleteFail'))
+      message.error(data.message || t('history.deleteFail'))
     }
   } catch (err) {
     if (err !== 'cancel') {
-      ElMessage.error(t('history.deleteFail'))
+      message.error(t('history.deleteFail'))
       console.error(err)
     }
   }

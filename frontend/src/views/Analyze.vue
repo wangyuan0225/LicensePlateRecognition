@@ -144,9 +144,10 @@
 import { ref, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { UploadFilled, Picture, VideoCameraFilled } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 
 const { t } = useI18n()
+const message = useMessage()
 
 const selectedModel = ref('yolo26')
 const previewUrl = ref('')
@@ -184,7 +185,7 @@ const handleFileChange = (file) => {
     previewUrl.value = URL.createObjectURL(file.raw)
     result.value = null
   } else {
-    ElMessage.error('Please upload a valid image file.')
+    message.error('Please upload a valid image file.')
   }
 }
 
@@ -209,11 +210,11 @@ const startCamera = async () => {
     result.value = null
   } catch (err) {
     if (err.name === 'NotAllowedError') {
-      ElMessage.error('相机权限被拒绝，请在浏览器设置中允许使用相机')
+      message.error('相机权限被拒绝，请在浏览器设置中允许使用相机')
     } else if (err.name === 'NotFoundError') {
-      ElMessage.error('未检测到摄像头设备')
+      message.error('未检测到摄像头设备')
     } else {
-      ElMessage.error('无法打开相机: ' + err.message)
+      message.error('无法打开相机: ' + err.message)
     }
   }
 }
@@ -318,7 +319,7 @@ const startAnalysis = async () => {
     const data = await res.json()
 
     if (data.code === 200) {
-      ElMessage.success('识别完成')
+      message.success('识别完成')
       result.value = {
         plateNumber: data.data.plateNumber,
         plateType: data.data.plateType,
@@ -329,10 +330,10 @@ const startAnalysis = async () => {
         originalImageUrl: data.data.originalImageUrl,
       }
     } else {
-      ElMessage.error(data.message || '识别失败')
+      message.error(data.message || '识别失败')
     }
   } catch (err) {
-    ElMessage.error('网络请求失败，请检查后端是否启动')
+    message.error('网络请求失败，请检查后端是否启动')
     console.error(err)
   } finally {
     analyzing.value = false

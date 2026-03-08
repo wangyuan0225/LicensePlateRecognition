@@ -91,7 +91,6 @@ const features = computed(() => [
   align-items: center;
   justify-content: space-between;
   gap: 60px;
-  margin-bottom: 100px;
   min-height: 50vh;
 }
 

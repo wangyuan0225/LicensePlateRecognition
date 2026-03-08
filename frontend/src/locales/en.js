@@ -7,6 +7,7 @@ export default {
         changePassword: 'Change Password',
         logout: 'Log Out',
         logoutSuccess: 'Logged out successfully',
+        notLoggedIn: 'Please log in to access this page',
         footer: '© 2026 LPR Vision Project. All rights reserved.'
     },
     home: {

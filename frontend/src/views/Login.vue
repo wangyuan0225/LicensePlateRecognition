@@ -90,10 +90,11 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { useMessage } from '@/composables/useMessage'
 
 const router = useRouter()
 const { t } = useI18n()
+const message = useMessage()
 const formRef = ref(null)
 
 const isLogin = ref(true)
@@ -154,14 +155,14 @@ const sendCode = async () => {
     })
     const data = await res.json()
     if (data.code === 200) {
-      ElMessage.success(t('login.codeSent'))
+      message.success(t('login.codeSent'))
       codeSent.value = true
       startCooldown()
     } else {
-      ElMessage.error(data.message || t('login.networkFail'))
+      message.error(data.message || t('login.networkFail'))
     }
   } catch {
-    ElMessage.error(t('login.networkFail'))
+    message.error(t('login.networkFail'))
   } finally {
     sendingCode.value = false
   }
@@ -199,11 +200,11 @@ const handleSubmit = async () => {
         if (data.code === 200) {
           localStorage.setItem('token', data.data.token)
           localStorage.setItem('user', JSON.stringify(data.data.user))
-          ElMessage.success(t('login.loginSuccess'))
+          message.success(t('login.loginSuccess'))
           const redirect = router.currentRoute.value.query.redirect
           router.push(redirect || '/analyze')
         } else {
-          ElMessage.error(data.message || t('login.loginFail'))
+          message.error(data.message || t('login.loginFail'))
         }
       } else {
         // 注册
@@ -220,15 +221,15 @@ const handleSubmit = async () => {
         const data = await res.json()
 
         if (data.code === 201) {
-          ElMessage.success(t('login.registerSuccess'))
+          message.success(t('login.registerSuccess'))
           isLogin.value = true
           formRef.value?.resetFields()
         } else {
-          ElMessage.error(data.message || t('login.registerFail'))
+          message.error(data.message || t('login.registerFail'))
         }
       }
     } catch {
-      ElMessage.error(t('login.networkFail'))
+      message.error(t('login.networkFail'))
     } finally {
       loading.value = false
     }
