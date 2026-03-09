@@ -106,7 +106,6 @@ export default {
         ruleCodeLength: '验证码为 6 位数字',
         ruleOldPasswordRequired: '请输入旧密码',
         ruleNewPasswordRequired: '请输入新密码',
-        ruleNewPasswordRequired: '请输入新密码',
         rulePasswordLength: '长度应为 6 到 20 个字符',
         networkFail: '网络请求失败，请检查后端是否启动'
     },
