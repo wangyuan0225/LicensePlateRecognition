@@ -2,7 +2,6 @@ package com.wy0225.service;
 
 import com.wy0225.entity.Feedback;
 import com.wy0225.entity.RecognitionRecord;
-import com.wy0225.entity.User;
 import com.wy0225.repository.FeedbackRepository;
 import com.wy0225.repository.RecognitionRecordRepository;
 import com.wy0225.repository.UserRepository;
@@ -96,6 +95,7 @@ public class AdminService {
             item.put("recognizedPlate", f.getRecognizedPlate());
             item.put("correctedPlate", f.getCorrectedPlate());
             item.put("modelType", f.getModelType());
+            item.put("status", f.getStatus());
             item.put("createdAt", f.getCreatedAt() != null ? f.getCreatedAt().format(formatter) : "");
 
             Long uId = f.getUserId();
@@ -109,5 +109,13 @@ public class AdminService {
         }
 
         return result;
+    }
+
+    public boolean updateFeedbackStatus(Long id, String status) {
+        return feedbackRepository.findById(id).map(f -> {
+            f.setStatus(status);
+            feedbackRepository.save(f);
+            return true;
+        }).orElse(false);
     }
 }

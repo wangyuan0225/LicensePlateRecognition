@@ -31,6 +31,9 @@ public class Feedback {
     @Column(name = "model_type", length = 50)
     private String modelType;
 
+    @Column(name = "status", length = 20)
+    private String status = "PENDING";
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

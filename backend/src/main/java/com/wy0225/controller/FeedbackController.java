@@ -63,6 +63,29 @@ public class FeedbackController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public Result<String> deleteFeedback(
+            @PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        Long userId = extractUserId(authHeader);
+        if (userId == null) {
+            return Result.error(401, "请先登录");
+        }
+
+        try {
+            boolean success = feedbackService.deleteFeedback(id, userId);
+            if (success) {
+                return Result.success("Feedback deleted successfully", null);
+            } else {
+                return Result.error(404, "记录不存在或无权限删除");
+            }
+        } catch (Exception e) {
+            log.error("Failed to delete feedback", e);
+            return Result.error(500, "删除反馈失败: " + e.getMessage());
+        }
+    }
+
     private Long extractUserId(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;

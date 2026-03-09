@@ -69,12 +69,19 @@
           </template>
         </el-table-column>
 
-        <el-table-column fixed="right" :label="$t('history.colActions')" width="140" align="center">
+        <el-table-column fixed="right" :label="$t('history.colActions')" width="240" align="center">
           <template #default="scope">
-            <el-button link type="primary" size="small" @click="showDetail(scope.row)">{{ $t('history.actionDetails')
-            }}</el-button>
-            <el-button link type="danger" size="small" @click="deleteRecord(scope.row)">{{ $t('history.actionDelete')
-            }}</el-button>
+            <div class="action-btn-group">
+              <el-button class="notion-btn primary-btn" size="small" @click="showDetail(scope.row)">
+                {{ $t('history.actionDetails') }}
+              </el-button>
+              <el-button class="notion-btn warning-btn" size="small" @click="openFeedback(scope.row)">
+                {{ $t('feedback.btnFeedbackError') }}
+              </el-button>
+              <el-button class="notion-btn danger-btn" size="small" @click="deleteRecord(scope.row)">
+                {{ $t('history.actionDelete') }}
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -127,6 +134,26 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- Feedback Dialog -->
+    <el-dialog v-model="showFeedbackDialog" :title="$t('feedback.dialogTitle')" width="500px">
+      <p style="margin-bottom: 20px; color: var(--text-secondary); line-height: 1.5;">
+        {{ $t('feedback.dialogTips') }}
+      </p>
+      <el-form label-position="top">
+        <el-form-item :label="$t('feedback.labelCorrectPlate')">
+          <el-input v-model="feedbackPlate" :placeholder="$t('feedback.placeholderCorrectPlate')" clearable />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showFeedbackDialog = false">{{ $t('history.confirmCancel') }}</el-button>
+          <el-button type="primary" @click="submitFeedback" :loading="submittingFeedback">
+            {{ submittingFeedback ? $t('feedback.btnWait') : $t('feedback.btnSubmit') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -149,6 +176,11 @@ const total = ref(0)
 const tableData = ref([])
 const detailVisible = ref(false)
 const detailRecord = ref(null)
+
+const showFeedbackDialog = ref(false)
+const feedbackPlate = ref('')
+const submittingFeedback = ref(false)
+const currentFeedbackRecord = ref(null)
 
 const fetchData = async () => {
   loading.value = true
@@ -188,10 +220,59 @@ const fetchData = async () => {
   }
 }
 
-const formatDate = (date) => {
-  if (!date) return ''
-  const d = new Date(date)
-  return d.toISOString().split('T')[0]
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleString()
+  } catch {
+    return dateString
+  }
+}
+
+const openFeedback = (row) => {
+  currentFeedbackRecord.value = row
+  feedbackPlate.value = row.plateNumber || ''
+  showFeedbackDialog.value = true
+}
+
+const submitFeedback = async () => {
+  if (!feedbackPlate.value.trim()) {
+    message.warning('请输入正确的车牌号码')
+    return
+  }
+
+  submittingFeedback.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/v1/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        originalImageUrl: currentFeedbackRecord.value.originalImageUrl,
+        resultImageUrl: currentFeedbackRecord.value.resultImageUrl,
+        recognizedPlate: currentFeedbackRecord.value.plateNumber,
+        modelType: currentFeedbackRecord.value.modelType,
+        correctedPlate: feedbackPlate.value.trim()
+      })
+    })
+
+    const data = await res.json()
+    if (data.code === 200) {
+      message.success(t('feedback.submitSuccess'))
+      showFeedbackDialog.value = false
+    } else {
+      message.error(data.message || t('feedback.submitFail'))
+    }
+  } catch (err) {
+    message.error(t('feedback.submitFail'))
+    console.error(err)
+  } finally {
+    submittingFeedback.value = false
+  }
 }
 
 const showDetail = (row) => {
@@ -205,6 +286,7 @@ const deleteRecord = async (row) => {
       confirmButtonText: t('history.confirmOk'),
       cancelButtonText: t('history.confirmCancel'),
       type: 'warning',
+      customClass: 'notion-msgbox'
     })
 
     const token = localStorage.getItem('token')
@@ -295,6 +377,43 @@ const getPlateColorStyle = (text) => {
 
 .date-picker {
   width: 320px !important;
+}
+
+.action-btn-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.notion-btn {
+  font-weight: 600 !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease;
+  margin: 0 !important;
+}
+
+.primary-btn {
+  background-color: #2563eb !important;
+}
+.primary-btn:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.warning-btn {
+  background-color: #d97706 !important;
+}
+.warning-btn:hover {
+  background-color: #b45309 !important;
+}
+
+.danger-btn {
+  background-color: #dc2626 !important;
+}
+.danger-btn:hover {
+  background-color: #b91c1c !important;
 }
 
 .table-wrapper {

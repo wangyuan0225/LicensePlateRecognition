@@ -65,6 +65,7 @@ CREATE TABLE `feedbacks` (
     `recognized_plate`   VARCHAR(50)  DEFAULT NULL COMMENT '算法识别的车牌号码',
     `corrected_plate`    VARCHAR(50)  DEFAULT NULL COMMENT '用户更正的车牌号码',
     `model_type`         VARCHAR(50)  DEFAULT NULL COMMENT '算法模型',
+    `status`             VARCHAR(20)  DEFAULT 'PENDING' COMMENT '审批状态',
     `created_at`         DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '反馈时间',
     PRIMARY KEY (`id`),
     KEY `idx_user_id` (`user_id`),

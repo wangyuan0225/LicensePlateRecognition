@@ -11,6 +11,16 @@ export default {
         feedback: '错误反馈',
         adminHistory: '所有用户记录',
         adminFeedback: '所有用户反馈',
+        statusPending: '待审核',
+        statusApproved: '已通过',
+        statusRejected: '已驳回',
+        actionApprove: '审批通过',
+        actionReject: '驳回反馈',
+        actionRevoke: '撤回反馈',
+        filterUser: '用户',
+        filterAllUsers: '所有用户',
+        filterStatus: '状态',
+        filterAllStatus: '所有状态',
         footer: '© 2026 LPR Vision Project. 保留所有权利。'
     },
     home: {
@@ -212,6 +222,7 @@ export default {
         colRecognized: '系统识别',
         colCorrected: '用户纠正',
         colModel: '使用模型',
+        colStatus: '审核状态',
         colUser: '提交用户',
         colTime: '反馈时间'
     }

@@ -11,6 +11,16 @@ export default {
         feedback: 'Error Feedback',
         adminHistory: 'All Users History',
         adminFeedback: 'All Users Feedback',
+        statusPending: 'Pending',
+        statusApproved: 'Approved',
+        statusRejected: 'Rejected',
+        actionApprove: 'Approve',
+        actionReject: 'Reject',
+        actionRevoke: 'Revoke',
+        filterUser: 'User',
+        filterAllUsers: 'All Users',
+        filterStatus: 'Status',
+        filterAllStatus: 'All Statuses',
         footer: '© 2026 LPR Vision Project. All rights reserved.'
     },
     home: {
@@ -213,6 +223,7 @@ export default {
         colRecognized: 'System Recognized',
         colCorrected: 'User Corrected',
         colModel: 'Model Used',
+        colStatus: 'Status',
         colUser: 'User',
         colTime: 'Feedback Time'
     }

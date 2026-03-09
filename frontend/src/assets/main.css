@@ -103,3 +103,41 @@ a,
 .el-message.lpr-message .el-message__closeBtn:hover {
   color: #111827 !important;
 }
+
+/* ============================================================
+   Custom Notion Aesthetic MessageBox
+   ============================================================ */
+.notion-msgbox {
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
+}
+
+.notion-msgbox .el-message-box__title {
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+  color: #1a1a1a !important;
+}
+
+.notion-msgbox .el-message-box__content {
+  color: #4b5563 !important;
+  font-size: 0.95rem !important;
+}
+
+/* Button overrides for Notion aesthetic */
+.notion-msgbox .el-button {
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+.notion-msgbox .el-button--primary {
+  background-color: #2563eb !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.notion-msgbox .el-button--primary:hover {
+  background-color: #1d4ed8 !important;
+}

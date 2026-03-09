@@ -9,8 +9,8 @@
 
         <el-card class="filter-card" shadow="never">
             <el-form :inline="true" :model="filters" class="filter-form" @submit.prevent="handleSearch">
-                <el-form-item label="User" style="margin-bottom: 0;">
-                    <el-select v-model="filters.userId" placeholder="All Users" clearable style="width: 200px;">
+                <el-form-item :label="$t('app.filterUser')" style="margin-bottom: 0;">
+                    <el-select v-model="filters.userId" :placeholder="$t('app.filterAllUsers')" clearable style="width: 200px;">
                         <el-option
                             v-for="user in users"
                             :key="user.id"
@@ -35,7 +35,7 @@
             </el-form>
         </el-card>
 
-        <el-card class="table-card" shadow="sm" v-loading="loading">
+        <div class="notion-card table-wrapper" v-loading="loading">
             <el-table :data="tableData" style="width: 100%" max-height="600" empty-text="No data">
                 <!-- Username -->
                 <el-table-column prop="username" :label="$t('history.colUser')" min-width="120" />
@@ -60,23 +60,41 @@
                     </template>
                 </el-table-column>
 
-                <el-table-column prop="plateNumber" :label="$t('history.colPlate')" min-width="140">
+                <el-table-column prop="plateNumber" :label="$t('history.colPlate')" min-width="140" align="center">
                     <template #default="scope">
-                        <el-tag size="large" type="success" effect="plain" class="plate-tag">
+                        <span class="custom-tag" :style="getPlateColorStyle(scope.row.plateType)">
                             {{ scope.row.plateNumber || '未识别' }}
-                        </el-tag>
+                        </span>
                     </template>
                 </el-table-column>
 
-                <el-table-column :label="$t('history.colModel')" min-width="120">
+                <el-table-column prop="plateType" :label="$t('history.colPlateType')" min-width="120" align="center">
                     <template #default="scope">
-                        <el-tag size="small" type="info">
-                            {{ formatModelName(scope.row.modelType) }}
-                        </el-tag>
+                        <span class="custom-tag" :style="getPlateColorStyle(scope.row.plateType)">
+                            {{ scope.row.plateType || '-' }}
+                        </span>
                     </template>
                 </el-table-column>
 
-                <el-table-column prop="createdAt" :label="$t('history.colDate')" width="180" />
+                <el-table-column :label="$t('history.colModel')" min-width="120" align="center">
+                    <template #default="scope">
+                        <span class="custom-tag">
+                            {{ formatModelName(scope.row.modelType) }}
+                        </span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="processingTimeMs" :label="$t('history.colTime')" min-width="120" align="center">
+                    <template #default="scope">
+                        <span class="time-cell">{{ scope.row.processingTimeMs ? scope.row.processingTimeMs.toFixed(1) : '-' }}ms</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="createdAt" :label="$t('history.colDate')" width="200" align="center">
+                    <template #default="scope">
+                        <span class="date-cell">{{ scope.row.createdAt }}</span>
+                    </template>
+                </el-table-column>
             </el-table>
 
             <div class="pagination-container">
@@ -91,7 +109,7 @@
                     @current-change="handleCurrentChange"
                 />
             </div>
-        </el-card>
+        </div>
     </div>
 </template>
 
@@ -185,6 +203,18 @@ const formatModelName = (modelKey) => {
     return map[modelKey] || modelKey
 }
 
+const getPlateColorStyle = (text) => {
+    if (!text) return { color: '#000' }
+    if (text.includes('牌') || text.includes('车')) return { color: '#000' }
+
+    if (text.includes('蓝')) return { color: '#0050b3' }
+    if (text.includes('黄')) return { color: '#d4b106' }
+    if (text.includes('绿')) return { color: '#389e0d' }
+    if (text.includes('白')) return { color: '#595959' }
+    if (text.includes('黑')) return { color: '#000000' }
+    return { color: '#000' }
+}
+
 onMounted(() => {
     fetchUsers()
     fetchHistory()
@@ -229,15 +259,48 @@ onMounted(() => {
     align-items: flex-end;
 }
 
-.table-card {
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
+.table-wrapper {
+    padding: 0;
+    overflow: hidden;
 }
 
-.plate-tag {
-    font-weight: bold;
-    font-family: monospace;
-    font-size: 14px;
+:deep(.el-table) {
+    --el-table-border-color: var(--border-color);
+    --el-table-header-bg-color: var(--bg-secondary);
+    --el-table-header-text-color: var(--text-primary);
+    --el-table-text-color: var(--text-primary);
+    --el-table-row-hover-bg-color: var(--bg-secondary);
+}
+
+:deep(.el-table th.el-table__cell) {
+    font-weight: 600;
+    background-color: var(--bg-secondary) !important;
+}
+
+.custom-tag {
+    display: inline-block;
+    border: 1px solid #000;
+    background-color: #fff;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.time-cell {
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.date-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9rem;
 }
 
 .image-slot {
@@ -254,6 +317,8 @@ onMounted(() => {
     display: flex;
     justify-content: flex-end;
     margin-top: 24px;
+    margin-bottom: 24px;
+    margin-right: 24px;
     padding-top: 16px;
     border-top: 1px solid var(--border-light);
 }

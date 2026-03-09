@@ -202,7 +202,13 @@ const handleSubmit = async () => {
           localStorage.setItem('user', JSON.stringify(data.data.user))
           message.success(t('login.loginSuccess'))
           const redirect = router.currentRoute.value.query.redirect
-          router.push(redirect || '/analyze')
+          if (redirect) {
+            router.push(redirect)
+          } else if (data.data.user?.role === 'ADMIN') {
+            router.push('/admin/history')
+          } else {
+            router.push('/analyze')
+          }
         } else {
           message.error(data.message || t('login.loginFail'))
         }

@@ -34,4 +34,16 @@ public class FeedbackServiceImpl implements FeedbackService {
     public List<Feedback> getUserFeedbacks(Long userId) {
         return feedbackRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
+
+    @Override
+    @Transactional
+    public boolean deleteFeedback(Long id, Long userId) {
+        return feedbackRepository.findById(id).map(f -> {
+            if (f.getUserId().equals(userId)) {
+                feedbackRepository.delete(f);
+                return true;
+            }
+            return false;
+        }).orElse(false);
+    }
 }

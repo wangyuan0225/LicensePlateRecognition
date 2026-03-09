@@ -74,4 +74,27 @@ public class AdminController {
 
         return Result.success(adminService.getAllFeedbackWithFilters(userId, modelType));
     }
+
+    @PutMapping("/feedback/{id}/status")
+    public Result<String> updateFeedbackStatus(
+            @PathVariable("id") Long id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        if (!isAdmin(authHeader)) {
+            return Result.error(403, "无权限访问");
+        }
+
+        String status = body.get("status");
+        if (status == null || (!status.equals("APPROVED") && !status.equals("REJECTED"))) {
+            return Result.error(400, "无效的状态值");
+        }
+
+        boolean success = adminService.updateFeedbackStatus(id, status);
+        if (success) {
+            return Result.success("更新状态成功");
+        } else {
+            return Result.error(404, "找不到该反馈记录");
+        }
+    }
 }

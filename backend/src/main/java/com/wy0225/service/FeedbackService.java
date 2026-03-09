@@ -9,4 +9,6 @@ public interface FeedbackService {
             String correctedPlate, String modelType);
 
     List<Feedback> getUserFeedbacks(Long userId);
+
+    boolean deleteFeedback(Long id, Long userId);
 }
