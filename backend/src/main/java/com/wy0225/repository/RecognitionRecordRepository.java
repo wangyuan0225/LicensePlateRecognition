@@ -27,4 +27,13 @@ public interface RecognitionRecordRepository extends JpaRepository<RecognitionRe
                         Pageable pageable);
 
         long countByUserId(Long userId);
+
+        @Query("SELECT r FROM RecognitionRecord r WHERE " +
+                        "(:userId IS NULL OR r.userId = :userId) AND " +
+                        "(:modelType IS NULL OR r.modelType = :modelType) " +
+                        "ORDER BY r.createdAt DESC")
+        Page<RecognitionRecord> findAllWithFilters(
+                        @Param("userId") Long userId,
+                        @Param("modelType") String modelType,
+                        Pageable pageable);
 }

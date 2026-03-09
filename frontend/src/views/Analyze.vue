@@ -136,19 +136,44 @@
             <span class="label">{{ $t('analyze.timeTaken') }}</span>
             <span class="value">{{ result.processingTimeMs }}ms</span>
           </div>
+          <div class="feedback-action" style="grid-column: span 2; display: flex; justify-content: flex-end; margin-top: 16px;">
+            <el-button type="danger" plain @click="showFeedbackDialog = true" :icon="Warning">
+              {{ $t('feedback.btnFeedbackError') }}
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Hidden canvas for capturing camera frame -->
     <canvas ref="canvasRef" style="display:none" />
+
+    <!-- Feedback Dialog -->
+    <el-dialog v-model="showFeedbackDialog" :title="$t('feedback.dialogTitle')" width="500px">
+      <p style="margin-bottom: 20px; color: var(--text-secondary); line-height: 1.5;">
+        {{ $t('feedback.dialogTips') }}
+      </p>
+      <el-form label-position="top">
+        <el-form-item :label="$t('feedback.labelCorrectPlate')">
+          <el-input v-model="feedbackPlate" :placeholder="$t('feedback.placeholderCorrectPlate')" clearable />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showFeedbackDialog = false">{{ $t('history.confirmCancel') }}</el-button>
+          <el-button type="primary" @click="submitFeedback" :loading="submittingFeedback">
+            {{ submittingFeedback ? $t('feedback.btnWait') : $t('feedback.btnSubmit') }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { UploadFilled, Picture, VideoCameraFilled } from '@element-plus/icons-vue'
+import { UploadFilled, Picture, VideoCameraFilled, Warning } from '@element-plus/icons-vue'
 import { useMessage } from '@/composables/useMessage'
 
 const { t } = useI18n()
@@ -159,6 +184,11 @@ const previewUrl = ref('')
 const selectedFile = ref(null)
 const analyzing = ref(false)
 const result = ref(null)
+
+// --- Feedback state ---
+const showFeedbackDialog = ref(false)
+const feedbackPlate = ref('')
+const submittingFeedback = ref(false)
 
 // --- Input mode ---
 const inputMode = ref('upload')
@@ -342,6 +372,49 @@ const startAnalysis = async () => {
     console.error(err)
   } finally {
     analyzing.value = false
+  }
+}
+
+// --- Feedback Submission ---
+const submitFeedback = async () => {
+  if (!feedbackPlate.value.trim()) {
+    message.warning(t('feedback.placeholderCorrectPlate'))
+    return
+  }
+
+  submittingFeedback.value = true
+  try {
+    const token = localStorage.getItem('token')
+    
+    // Make request to submit feedback
+    const res = await fetch('/api/v1/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        originalImageUrl: result.value.originalImageUrl,
+        resultImageUrl: result.value.resultImageUrl,
+        recognizedPlate: result.value.plateNumber,
+        correctedPlate: feedbackPlate.value.trim(),
+        modelType: result.value.modelType
+      })
+    })
+
+    const data = await res.json()
+    if (data.code === 200) {
+      message.success(t('feedback.submitSuccess'))
+      showFeedbackDialog.value = false
+      feedbackPlate.value = ''
+    } else {
+      message.error(data.message || t('feedback.submitFail'))
+    }
+  } catch (err) {
+    message.error(t('feedback.submitFail'))
+    console.error(err)
+  } finally {
+    submittingFeedback.value = false
   }
 }
 

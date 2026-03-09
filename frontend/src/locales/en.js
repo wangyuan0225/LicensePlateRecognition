@@ -8,6 +8,9 @@ export default {
         logout: 'Log Out',
         logoutSuccess: 'Logged out successfully',
         notLoggedIn: 'Please log in to access this page',
+        feedback: 'Error Feedback',
+        adminHistory: 'All Users History',
+        adminFeedback: 'All Users Feedback',
         footer: '© 2026 LPR Vision Project. All rights reserved.'
     },
     home: {
@@ -103,8 +106,22 @@ export default {
         ruleCodeLength: 'Code must be 6 digits',
         ruleOldPasswordRequired: 'Please enter your current password',
         ruleNewPasswordRequired: 'Please enter a new password',
+        ruleNewPasswordRequired: 'Please enter a new password',
         rulePasswordLength: 'Length should be 6 to 20 characters',
         networkFail: 'Network error, please check if backend is running'
+    },
+    forcePwd: {
+        title: 'Force Password Change',
+        subtitle: 'For your security, please change the default password upon your first login.',
+        oldPassword: 'Current Password',
+        oldPasswordPlaceholder: 'Enter current password',
+        newPassword: 'New Password',
+        newPasswordPlaceholder: 'Enter new password (6-20 chars)',
+        submitBtn: 'Confirm Change',
+        successMsg: 'Password changed successfully, please log in again',
+        ruleOldPasswordRequired: 'Please enter current password',
+        ruleNewPasswordRequired: 'Please enter a new password',
+        rulePasswordLength: 'Length should be 6 to 20 characters'
     },
     analyze: {
         title: 'Analysis Center',
@@ -155,6 +172,7 @@ export default {
         colConfidence: 'Confidence',
         colTime: 'Time',
         colThumb: 'Thumbnail',
+        colUser: 'User',
         colActions: 'Actions',
         actionDetails: 'Details',
         actionDelete: 'Delete',
@@ -175,5 +193,27 @@ export default {
         deleteFail: 'Delete failed',
         fetchFail: 'Failed to fetch history',
         networkFail: 'Network error, please check if backend is running'
+    },
+    feedback: {
+        title: 'Error Feedback',
+        subtitle: 'View your submitted recognition error feedbacks.',
+        btnSubmit: 'Submit Feedback',
+        btnFeedbackError: 'Report Error',
+        btnWait: 'Submitting...',
+        dialogTitle: 'Recognition Feedback',
+        dialogTips: 'If the recognition result is incorrect, please enter the actual license plate number here to help us improve.',
+        labelCorrectPlate: 'Correct License Plate',
+        placeholderCorrectPlate: 'e.g., AW 0524X',
+        submitSuccess: 'Feedback submitted successfully. Thank you!',
+        submitFail: 'Failed to submit feedback',
+        fetchFail: 'Failed to fetch feedback list',
+        noData: 'No feedback records yet',
+        colOriginal: 'Original Image',
+        colResult: 'Detection Result',
+        colRecognized: 'System Recognized',
+        colCorrected: 'User Corrected',
+        colModel: 'Model Used',
+        colUser: 'User',
+        colTime: 'Feedback Time'
     }
 }

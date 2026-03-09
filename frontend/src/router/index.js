@@ -26,6 +26,12 @@ const routes = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/feedback',
+        name: 'Feedback',
+        component: () => import('../views/Feedback.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/forgot-password',
         name: 'ForgotPassword',
         component: () => import('../views/ForgotPassword.vue')
@@ -35,6 +41,24 @@ const routes = [
         name: 'ChangePassword',
         component: () => import('../views/ChangePassword.vue'),
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/force-change-password',
+        name: 'ForceChangePassword',
+        component: () => import('../views/ForceChangePassword.vue'),
+        meta: { requiresAuth: true, hideLayout: true }
+    },
+    {
+        path: '/admin/history',
+        name: 'AdminHistory',
+        component: () => import('../views/AdminHistory.vue'),
+        meta: { requiresAuth: true, role: 'ADMIN' }
+    },
+    {
+        path: '/admin/feedback',
+        name: 'AdminFeedback',
+        component: () => import('../views/AdminFeedback.vue'),
+        meta: { requiresAuth: true, role: 'ADMIN' }
     }
 ]
 
@@ -43,10 +67,23 @@ const router = createRouter({
     routes
 })
 
-// Navigation guard: 未登录时显示提示并跳转到登录页
+// Navigation guard: 未登录时显示提示并跳转到登录页，以及强制修改密码拦截
 router.beforeEach((to, from, next) => {
+    const token = localStorage.getItem('token')
+    const userStr = localStorage.getItem('user')
+    let user = null
+    if (userStr) {
+        try { user = JSON.parse(userStr) } catch (e) { }
+    }
+
+    // 1. 强制修改密码拦截: 如果需要改密码，且目标并非强改页面/登出等
+    if (user && user.forceChangePassword && to.path !== '/force-change-password' && to.path !== '/login') {
+        next('/force-change-password')
+        return
+    }
+
+    // 2. 权限校验
     if (to.meta.requiresAuth) {
-        const token = localStorage.getItem('token')
         if (!token) {
             // 读取当前语言环境的提示文案
             const t = i18n.global.t
@@ -58,12 +95,18 @@ router.beforeEach((to, from, next) => {
                 showClose: false,
             })
             next({ name: 'Login', query: { redirect: to.fullPath } })
-        } else {
-            next()
+            return
         }
-    } else {
-        next()
+
+        // 3. 角色校验
+        if (to.meta.role && user && user.role !== to.meta.role) {
+            ElMessage.error('无权限访问')
+            next('/')
+            return
+        }
     }
+
+    next()
 })
 
 export default router

@@ -8,6 +8,9 @@ export default {
         logout: '退出登录',
         logoutSuccess: '已退出登录',
         notLoggedIn: '请先登录后再访问该页面',
+        feedback: '错误反馈',
+        adminHistory: '所有用户记录',
+        adminFeedback: '所有用户反馈',
         footer: '© 2026 LPR Vision Project. 保留所有权利。'
     },
     home: {
@@ -103,8 +106,22 @@ export default {
         ruleCodeLength: '验证码为 6 位数字',
         ruleOldPasswordRequired: '请输入旧密码',
         ruleNewPasswordRequired: '请输入新密码',
+        ruleNewPasswordRequired: '请输入新密码',
         rulePasswordLength: '长度应为 6 到 20 个字符',
         networkFail: '网络请求失败，请检查后端是否启动'
+    },
+    forcePwd: {
+        title: '首次登录强制重置',
+        subtitle: '为了您的账号安全，首次登录管理员账号请修改默认密码',
+        oldPassword: '当前密码',
+        oldPasswordPlaceholder: '请输入当前密码',
+        newPassword: '新密码',
+        newPasswordPlaceholder: '请输入新密码（6-20位）',
+        submitBtn: '确认修改',
+        successMsg: '密码修改成功，请重新登录',
+        ruleOldPasswordRequired: '请输入当前密码',
+        ruleNewPasswordRequired: '请输入新密码',
+        rulePasswordLength: '长度应为 6 到 20 个字符'
     },
     analyze: {
         title: '分析中心',
@@ -155,6 +172,7 @@ export default {
         colConfidence: '置信度',
         colTime: '耗时',
         colThumb: '缩略图',
+        colUser: '提交用户',
         colActions: '操作',
         actionDetails: '详情',
         actionDelete: '删除',
@@ -175,5 +193,27 @@ export default {
         deleteFail: '删除失败',
         fetchFail: '获取历史记录失败',
         networkFail: '网络请求失败，请检查后端是否启动'
+    },
+    feedback: {
+        title: '错误反馈',
+        subtitle: '查看您提交的识别错误反馈记录。',
+        btnSubmit: '提交反馈',
+        btnFeedbackError: '反馈错误',
+        btnWait: '提交中...',
+        dialogTitle: '识别结果反馈',
+        dialogTips: '如果您发现系统识别结果有误，请在此填写正确的车牌号码，帮助我们优化模型。',
+        labelCorrectPlate: '正确的车牌号码',
+        placeholderCorrectPlate: '例如：皖A12345',
+        submitSuccess: '反馈提交成功，感谢您的帮助！',
+        submitFail: '反馈提交失败',
+        fetchFail: '获取反馈列表失败',
+        noData: '暂无反馈记录',
+        colOriginal: '原始图像',
+        colResult: '检测结果',
+        colRecognized: '系统识别',
+        colCorrected: '用户纠正',
+        colModel: '使用模型',
+        colUser: '提交用户',
+        colTime: '反馈时间'
     }
 }

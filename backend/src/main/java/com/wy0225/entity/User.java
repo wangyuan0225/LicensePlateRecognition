@@ -21,6 +21,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(length = 20)
+    private String role = "USER";
+
+    @Column(name = "force_change_password")
+    private Boolean forceChangePassword = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

@@ -10,8 +10,18 @@
             <span class="logo-text">{{ $t('app.title') }}</span>
           </div>
           <nav class="nav-links">
-            <router-link to="/analyze" class="nav-item">{{ $t('app.analyze') }}</router-link>
-            <router-link to="/history" class="nav-item">{{ $t('app.history') }}</router-link>
+            <!-- Normal User Links -->
+            <template v-if="!isAdmin">
+              <router-link to="/analyze" class="nav-item">{{ $t('app.analyze') }}</router-link>
+              <router-link to="/history" class="nav-item">{{ $t('app.history') }}</router-link>
+              <router-link to="/feedback" class="nav-item">{{ $t('app.feedback') }}</router-link>
+            </template>
+            <!-- Admin Links -->
+            <template v-else>
+              <router-link to="/admin/history" class="nav-item">{{ $t('app.adminHistory') }}</router-link>
+              <router-link to="/admin/feedback" class="nav-item">{{ $t('app.adminFeedback') }}</router-link>
+            </template>
+            
             <div class="divider"></div>
             <el-button link @click="toggleLanguage" class="lang-switcher">
               <el-icon>
@@ -101,6 +111,7 @@ const toggleLanguage = () => {
 
 const isLoggedIn = ref(false)
 const username = ref('')
+const isAdmin = ref(false)
 
 const checkLoginStatus = () => {
   const token = localStorage.getItem('token')
@@ -110,13 +121,16 @@ const checkLoginStatus = () => {
       const user = JSON.parse(userStr)
       isLoggedIn.value = true
       username.value = user.username || user.email || 'User'
+      isAdmin.value = user.role === 'ADMIN'
     } catch {
       isLoggedIn.value = false
       username.value = ''
+      isAdmin.value = false
     }
   } else {
     isLoggedIn.value = false
     username.value = ''
+    isAdmin.value = false
   }
 }
 

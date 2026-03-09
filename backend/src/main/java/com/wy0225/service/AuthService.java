@@ -71,7 +71,7 @@ public class AuthService {
             throw new RuntimeException("密码错误");
         }
 
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
@@ -80,6 +80,8 @@ public class AuthService {
         userInfo.put("id", user.getId());
         userInfo.put("username", user.getUsername());
         userInfo.put("email", user.getEmail());
+        userInfo.put("role", user.getRole());
+        userInfo.put("forceChangePassword", user.getForceChangePassword());
         result.put("user", userInfo);
 
         return result;
@@ -137,6 +139,23 @@ public class AuthService {
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    // ----------------------------------------------------------------
+    // 强制修改密码 (首次登录)
+    // ----------------------------------------------------------------
+
+    public void forceChangePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("当前密码错误");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setForceChangePassword(false); // 重置标记
         userRepository.save(user);
     }
 }

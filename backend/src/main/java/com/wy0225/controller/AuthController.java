@@ -156,4 +156,36 @@ public class AuthController {
             return Result.error(400, e.getMessage());
         }
     }
+
+    @PostMapping("/force-change-password")
+    public Result<Void> forceChangePassword(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody Map<String, String> body) {
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Result.error(401, "未授权");
+        }
+
+        String token = authHeader.substring(7);
+        Long userId;
+        try {
+            userId = jwtUtil.getUserIdFromToken(token);
+        } catch (Exception e) {
+            return Result.error(401, "Token 无效或已过期");
+        }
+
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+
+        if (oldPassword == null || newPassword == null) {
+            return Result.error(400, "当前密码和新密码不能为空");
+        }
+
+        try {
+            authService.forceChangePassword(userId, oldPassword, newPassword);
+            return Result.success(null);
+        } catch (RuntimeException e) {
+            return Result.error(400, e.getMessage());
+        }
+    }
 }
