@@ -165,7 +165,9 @@ export default {
         modelNameYolo26: 'YOLO26',
         modelNameYolov8: 'YOLOv8',
         modelNameHyperLPR: 'HyperLPR',
-        modelNameFusion: 'Nexus Fusion'
+        modelNameFusion: 'Nexus Fusion',
+        modelNameYolov11: 'yolov11',
+        modelYolov11: 'YOLOv11+LPRNet Algorithm (Combined advanced networks for precision)'
     },
     history: {
         title: 'History Records',

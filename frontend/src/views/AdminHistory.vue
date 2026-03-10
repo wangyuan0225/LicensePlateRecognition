@@ -26,6 +26,7 @@
                         <el-option :label="$t('analyze.modelNameYolov8')" value="yolov8" />
                         <el-option :label="$t('analyze.modelNameHyperLPR')" value="hyperlpr" />
                         <el-option :label="$t('analyze.modelNameFusion')" value="fusion" />
+                        <el-option :label="$t('analyze.modelNameYolov11')" value="yolov11" />
                     </el-select>
                 </el-form-item>
 
@@ -198,7 +199,8 @@ const formatModelName = (modelKey) => {
         'yolo26': t('analyze.modelNameYolo26'),
         'yolov8': t('analyze.modelNameYolov8'),
         'hyperlpr': t('analyze.modelNameHyperLPR'),
-        'fusion': t('analyze.modelNameFusion')
+        'fusion': t('analyze.modelNameFusion'),
+        'yolov11': t('analyze.modelNameYolov11')
     }
     return map[modelKey] || modelKey
 }

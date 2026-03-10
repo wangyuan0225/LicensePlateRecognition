@@ -295,6 +295,9 @@ def draw_result(orgimg, result_list):
         landmarks = result.get("landmarks", [])
         plate_no = result.get("plate_no", "")
         plate_color = result.get("plate_color", "")
+        if plate_color in ["未知", "未知色"]:
+            plate_color = "-"
+            
         if result.get("plate_type", 0) == 1:
             result_p = "%s %s双层" % (plate_no, plate_color)
         else:

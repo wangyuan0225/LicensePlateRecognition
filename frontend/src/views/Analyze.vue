@@ -13,8 +13,9 @@
         <el-form label-position="top">
           <el-form-item :label="$t('analyze.modelLabel')">
             <el-select v-model="selectedModel" :placeholder="$t('analyze.modelPlaceholder')" class="model-select">
-              <el-option :label="$t('analyze.modelYoloFast')" value="yolo26" />
-              <el-option :label="$t('analyze.modelYoloAcc')" value="yolov8" />
+              <el-option :label="$t('analyze.modelYolo26')" value="yolo26" />
+              <el-option :label="$t('analyze.modelYolov11')" value="yolov11" />
+              <el-option :label="$t('analyze.modelYolov8')" value="yolov8" />
               <el-option :label="$t('analyze.modelHyperLPR')" value="hyperlpr" />
               <el-option :label="$t('analyze.modelFusion')" value="fusion" />
             </el-select>
@@ -128,7 +129,7 @@
               <span class="custom-tag">
                 {{ $t(result.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (result.modelType === 'hyperlpr' ?
                   'analyze.modelNameHyperLPR' : (result.modelType === 'fusion' ? 'analyze.modelNameFusion' :
-                    'analyze.modelNameYolo26'))) }}
+                    (result.modelType === 'yolov11' ? 'analyze.modelNameYolov11' : 'analyze.modelNameYolo26')))) }}
               </span>
             </span>
           </div>

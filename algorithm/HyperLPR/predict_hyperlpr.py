@@ -65,7 +65,7 @@ def main():
                 x1, y1, x2, y2 = rect
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
                 
-                type_name = TYPE_MAP.get(type_idx, "未知")
+                type_name = TYPE_MAP.get(type_idx, "-")
                 plates_str += f"{plate_text} {type_name}|"
                 
             plates_str = plates_str.strip("|")

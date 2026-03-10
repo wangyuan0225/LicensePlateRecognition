@@ -6,6 +6,8 @@
         <p class="page-subtitle">{{ $t('history.subtitle') }}</p>
       </div>
       <div class="actions-area">
+        <el-button v-if="selectedRows.length > 0" class="notion-btn danger-btn"
+          @click="batchDeleteRecords">批量删除</el-button>
         <el-input v-model="searchQuery" :placeholder="$t('history.searchPlaceholder')" prefix-icon="Search"
           class="search-input" clearable @clear="fetchData" @keyup.enter="fetchData" />
         <el-date-picker v-model="dateRange" type="daterange" range-separator="-"
@@ -16,7 +18,9 @@
     </div>
 
     <div class="notion-card table-wrapper">
-      <el-table :data="tableData" style="width: 100%" v-loading="loading" :row-class-name="tableRowClassName">
+      <el-table :data="tableData" style="width: 100%" v-loading="loading" :row-class-name="tableRowClassName"
+        @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
         <el-table-column prop="createdAt" :label="$t('history.colDate')" min-width="220" align="center">
           <template #default="scope">
             <span class="date-cell">
@@ -49,7 +53,7 @@
             <span class="custom-tag">
               {{ $t(scope.row.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (scope.row.modelType === 'hyperlpr' ?
                 'analyze.modelNameHyperLPR' : (scope.row.modelType === 'fusion' ? 'analyze.modelNameFusion' :
-                  'analyze.modelNameYolo26'))) }}
+                  (scope.row.modelType === 'yolov11' ? 'analyze.modelNameYolov11' : 'analyze.modelNameYolo26')))) }}
             </span>
           </template>
         </el-table-column>
@@ -122,7 +126,7 @@
                 {{ $t(detailRecord.modelType === 'yolov8' ? 'analyze.modelNameYolov8' : (detailRecord.modelType ===
                   'hyperlpr' ? 'analyze.modelNameHyperLPR' : (detailRecord.modelType === 'fusion' ?
                     'analyze.modelNameFusion'
-                    : 'analyze.modelNameYolo26'))) }}
+                    : (detailRecord.modelType === 'yolov11' ? 'analyze.modelNameYolov11' : 'analyze.modelNameYolo26')))) }}
               </span>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('history.detailTime')">{{ detailRecord.processingTimeMs ?
@@ -176,6 +180,38 @@ const total = ref(0)
 const tableData = ref([])
 const detailVisible = ref(false)
 const detailRecord = ref(null)
+const selectedRows = ref([])
+
+const handleSelectionChange = (val) => {
+  selectedRows.value = val
+}
+
+const batchDeleteRecords = () => {
+  ElMessageBox.confirm(
+    '确认批量删除选中的识别记录？此操作不可恢复。',
+    t('history.confirmTitle'),
+    {
+      confirmButtonText: t('history.confirmOk'),
+      cancelButtonText: t('history.confirmCancel'),
+      type: 'warning',
+      customClass: 'notion-msgbox'
+    }
+  ).then(async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { 'Authorization': `Bearer ${token}` }
+      const promises = selectedRows.value.map(row =>
+        fetch(`/api/v1/history/${row.id}`, { method: 'DELETE', headers }).then(res => res.json())
+      )
+      await Promise.all(promises)
+      message.success('批量删除成功')
+      fetchData()
+    } catch (err) {
+      message.error('批量删除时发生错误')
+      console.error(err)
+    }
+  }).catch(() => { })
+}
 
 const showFeedbackDialog = ref(false)
 const feedbackPlate = ref('')
@@ -388,7 +424,7 @@ const getPlateColorStyle = (text) => {
 
 .notion-btn {
   font-weight: 600 !important;
-  border: 1px solid rgba(0,0,0,0.1) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
   color: #fff !important;
   border-radius: 6px !important;
   transition: all 0.2s ease;
@@ -398,6 +434,7 @@ const getPlateColorStyle = (text) => {
 .primary-btn {
   background-color: #2563eb !important;
 }
+
 .primary-btn:hover {
   background-color: #1d4ed8 !important;
 }
@@ -405,6 +442,7 @@ const getPlateColorStyle = (text) => {
 .warning-btn {
   background-color: #d97706 !important;
 }
+
 .warning-btn:hover {
   background-color: #b45309 !important;
 }
@@ -412,6 +450,7 @@ const getPlateColorStyle = (text) => {
 .danger-btn {
   background-color: #dc2626 !important;
 }
+
 .danger-btn:hover {
   background-color: #b91c1c !important;
 }

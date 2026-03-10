@@ -1,56 +1,61 @@
 <template>
     <div class="admin-feedback-container">
-        <div class="page-header">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
                 <h1 class="page-title">{{ $t('app.adminFeedback') }}</h1>
                 <p class="page-subtitle">View and filter all users' submitted feedbacks.</p>
+            </div>
+            <div class="actions-area" v-if="selectedRows.length > 0">
+                <el-button class="notion-btn approve-btn" @click="batchHandleStatus('APPROVED')">
+                    批量审批
+                </el-button>
+                <el-button class="notion-btn reject-btn" @click="batchHandleStatus('REJECTED')">
+                    批量驳回
+                </el-button>
             </div>
         </div>
 
         <el-card class="filter-card" shadow="never">
             <el-form :inline="true" :model="filters" class="filter-form" @submit.prevent="handleSearch">
                 <el-form-item :label="$t('app.filterUser')" style="margin-bottom: 0;">
-                    <el-select v-model="filters.userId" :placeholder="$t('app.filterAllUsers')" clearable style="width: 200px;">
-                        <el-option
-                            v-for="user in users"
-                            :key="user.id"
-                            :label="user.username"
-                            :value="user.id"
-                        />
+                    <el-select v-model="filters.userId" :placeholder="$t('app.filterAllUsers')" clearable
+                        style="width: 200px;">
+                        <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id" />
                     </el-select>
                 </el-form-item>
-                
+
                 <el-form-item :label="$t('analyze.modelLabel')" style="margin-bottom: 0;">
                     <el-select v-model="filters.modelType" placeholder="All Models" clearable style="width: 200px;">
                         <el-option :label="$t('analyze.modelNameYolo26')" value="yolo26" />
                         <el-option :label="$t('analyze.modelNameYolov8')" value="yolov8" />
                         <el-option :label="$t('analyze.modelNameHyperLPR')" value="hyperlpr" />
                         <el-option :label="$t('analyze.modelNameFusion')" value="fusion" />
+                        <el-option :label="$t('analyze.modelNameYolov11')" value="yolov11" />
                     </el-select>
                 </el-form-item>
 
                 <el-form-item style="margin-bottom: 0;">
-                    <el-button type="primary" @click="handleSearch" :icon="Search">{{ $t('history.searchBtn') }}</el-button>
+                    <el-button type="primary" @click="handleSearch" :icon="Search">{{ $t('history.searchBtn')
+                        }}</el-button>
                 </el-form-item>
             </el-form>
         </el-card>
 
         <div class="notion-card table-wrapper" v-loading="loading">
-            <el-table :data="tableData" style="width: 100%" max-height="600" :empty-text="$t('feedback.noData')">
+            <el-table :data="tableData" style="width: 100%" max-height="600" @selection-change="handleSelectionChange"
+                :empty-text="$t('feedback.noData')">
+                <el-table-column type="selection" width="55" align="center" />
                 <el-table-column prop="username" :label="$t('feedback.colUser')" min-width="120" />
-                
+
                 <el-table-column :label="$t('feedback.colOriginal')" width="100" align="center">
                     <template #default="scope">
-                        <el-image
-                            style="width: 60px; height: 40px; border-radius: 4px;"
-                            :src="scope.row.originalImageUrl"
-                            :preview-src-list="[scope.row.originalImageUrl]"
-                            fit="cover"
-                            lazy
-                            :preview-teleported="true"
-                        >
+                        <el-image style="width: 60px; height: 40px; border-radius: 4px;"
+                            :src="scope.row.originalImageUrl" :preview-src-list="[scope.row.originalImageUrl]"
+                            fit="cover" lazy :preview-teleported="true">
                             <template #error>
-                                <div class="image-slot"><el-icon><Picture /></el-icon></div>
+                                <div class="image-slot"><el-icon>
+                                        <Picture />
+                                    </el-icon></div>
                             </template>
                         </el-image>
                     </template>
@@ -58,30 +63,28 @@
 
                 <el-table-column :label="$t('feedback.colResult')" width="100" align="center">
                     <template #default="scope">
-                        <el-image
-                            style="width: 60px; height: 40px; border-radius: 4px;"
-                            :src="scope.row.resultImageUrl"
-                            :preview-src-list="[scope.row.resultImageUrl]"
-                            fit="cover"
-                            lazy
-                            :preview-teleported="true"
-                        >
+                        <el-image style="width: 60px; height: 40px; border-radius: 4px;" :src="scope.row.resultImageUrl"
+                            :preview-src-list="[scope.row.resultImageUrl]" fit="cover" lazy :preview-teleported="true">
                             <template #error>
-                                <div class="image-slot"><el-icon><Picture /></el-icon></div>
+                                <div class="image-slot"><el-icon>
+                                        <Picture />
+                                    </el-icon></div>
                             </template>
                         </el-image>
                     </template>
                 </el-table-column>
 
-                <el-table-column prop="recognizedPlate" :label="$t('feedback.colRecognized')" min-width="140" align="center">
+                <el-table-column prop="recognizedPlate" :label="$t('feedback.colRecognized')" min-width="140"
+                    align="center">
                     <template #default="scope">
                         <span class="custom-tag" :style="getPlateColorStyle(scope.row.recognizedPlate)">
                             {{ scope.row.recognizedPlate || '未识别' }}
                         </span>
                     </template>
                 </el-table-column>
-                
-                <el-table-column prop="correctedPlate" :label="$t('feedback.colCorrected')" min-width="140" align="center">
+
+                <el-table-column prop="correctedPlate" :label="$t('feedback.colCorrected')" min-width="140"
+                    align="center">
                     <template #default="scope">
                         <span class="custom-tag" :style="getPlateColorStyle(scope.row.correctedPlate)">
                             {{ scope.row.correctedPlate }}
@@ -114,13 +117,11 @@
                 <el-table-column :label="$t('history.colActions')" width="160" align="center" fixed="right">
                     <template #default="scope">
                         <div class="action-btn-group">
-                            <el-button 
-                                class="notion-btn approve-btn" size="small" 
+                            <el-button class="notion-btn approve-btn" size="small"
                                 @click="handleStatusChange(scope.row.id, 'APPROVED')">
                                 {{ $t('app.actionApprove') }}
                             </el-button>
-                            <el-button 
-                                class="notion-btn reject-btn" size="small" 
+                            <el-button class="notion-btn reject-btn" size="small"
                                 @click="handleStatusChange(scope.row.id, 'REJECTED')">
                                 {{ $t('app.actionReject') }}
                             </el-button>
@@ -144,6 +145,29 @@ const { t } = useI18n()
 const loading = ref(false)
 const tableData = ref([])
 const users = ref([])
+const selectedRows = ref([])
+
+const handleSelectionChange = (val) => {
+    selectedRows.value = val
+}
+
+const batchHandleStatus = async (newStatus) => {
+    if (selectedRows.value.length === 0) return
+    try {
+        const token = localStorage.getItem('token')
+        const promises = selectedRows.value.map(row =>
+            axios.put(`/api/v1/admin/feedback/${row.id}/status`,
+                { status: newStatus },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            )
+        )
+        await Promise.all(promises)
+        ElMessage.success('批量操作成功')
+        fetchFeedback()
+    } catch (e) {
+        ElMessage.error('批量操作失败')
+    }
+}
 
 const filters = ref({
     userId: null,
@@ -172,7 +196,7 @@ const fetchFeedback = async () => {
             userId: filters.value.userId || undefined,
             modelType: filters.value.modelType || undefined
         }
-        
+
         const res = await axios.get('/api/v1/admin/feedback', {
             params,
             headers: { 'Authorization': `Bearer ${token}` }
@@ -199,13 +223,14 @@ const formatModelName = (modelKey) => {
         'yolo26': t('analyze.modelNameYolo26'),
         'yolov8': t('analyze.modelNameYolov8'),
         'hyperlpr': t('analyze.modelNameHyperLPR'),
-        'fusion': t('analyze.modelNameFusion')
+        'fusion': t('analyze.modelNameFusion'),
+        'yolov11': t('analyze.modelNameYolov11')
     }
     return map[modelKey] || modelKey
 }
 
 const getStatusColorStyle = (status) => {
-    switch(status) {
+    switch (status) {
         case 'APPROVED': return { color: '#16a34a' }
         case 'REJECTED': return { color: '#dc2626' }
         default: return { color: '#d97706' }
@@ -213,7 +238,7 @@ const getStatusColorStyle = (status) => {
 }
 
 const getStatusText = (status) => {
-    switch(status) {
+    switch (status) {
         case 'APPROVED': return t('app.statusApproved')
         case 'REJECTED': return t('app.statusRejected')
         default: return t('app.statusPending')
@@ -223,7 +248,7 @@ const getStatusText = (status) => {
 const handleStatusChange = async (id, newStatus) => {
     try {
         const token = localStorage.getItem('token')
-        const res = await axios.put(`/api/v1/admin/feedback/${id}/status`, 
+        const res = await axios.put(`/api/v1/admin/feedback/${id}/status`,
             { status: newStatus },
             { headers: { 'Authorization': `Bearer ${token}` } }
         )
@@ -342,7 +367,7 @@ onMounted(() => {
 
 .notion-btn {
     font-weight: 600 !important;
-    border: 1px solid rgba(0,0,0,0.1) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
     color: #fff !important;
     border-radius: 6px !important;
     transition: all 0.2s ease;
@@ -352,6 +377,7 @@ onMounted(() => {
 .approve-btn {
     background-color: #16a34a !important;
 }
+
 .approve-btn:hover {
     background-color: #15803d !important;
 }
@@ -359,6 +385,7 @@ onMounted(() => {
 .reject-btn {
     background-color: #dc2626 !important;
 }
+
 .reject-btn:hover {
     background-color: #b91c1c !important;
 }

@@ -174,12 +174,16 @@ def draw_result(orgimg,dict_list,is_color=False):   # 车牌结果画出来
 
         height_area = result['roi_height']
         # landmarks=result['landmarks']
-        result_p = result['plate_no']
-        if result['plate_type']==0:#单层
-            result_p+=" "+result['plate_color']
-        else:                             #双层
-            result_p+=" "+result['plate_color']+"双层"
-        result_str+=result_p+" "
+        plate_color = result.get('plate_color', '')
+        if plate_color in ["未知", "未知色"]:
+            plate_color = "-"
+            
+        result_p = result.get('plate_no', '')
+        if result.get('plate_type', 0) == 0:  #单层
+            result_p += " " + plate_color
+        else:                                 #双层
+            result_p += " " + plate_color + "双层"
+        result_str += result_p + " "
         # for i in range(4):  #关键点
         #     cv2.circle(orgimg, (int(landmarks[i][0]), int(landmarks[i][1])), 5, clors[i], -1)
         cv2.rectangle(orgimg,(rect_area[0],rect_area[1]),(rect_area[2],rect_area[3]),(0,0,255),2) #画框

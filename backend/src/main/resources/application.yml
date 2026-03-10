@@ -60,3 +60,7 @@ app:
       base-dir: ../algorithm/HyperLPR
       python-path: "D:\\Anaconda3\\python.exe"
       script-name: predict_hyperlpr.py
+    yolov11:
+      base-dir: ../algorithm/yolov11+LPRNet
+      python-path: ../algorithm/yolov11+LPRNet/.venv/Scripts/python.exe
+      script-name: predict_yolov11_lprnet.py
