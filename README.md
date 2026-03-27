@@ -1,168 +1,165 @@
-# 车牌识别系统 LicensePlateRecognition
+﻿# 车牌识别系统 LicensePlateRecognition
 
-基于 **Spring Boot + Vue 3** 的全本地化多算法车牌识别平台，支持双算法引擎（YOLO26 / YOLOv8），带完整的用户认证与历史归档功能。
+基于 `Spring Boot 3 + Vue 3 + Python` 的多算法车牌识别项目，包含用户认证、识别历史、错误反馈和管理员审核功能。
+
+项目 Demo 体验地址：
 
 https://www.wangyuan0225.org/ （快速）
 http://app.wangyuan0225.org/ （慢速）
 
----
-
 ## 项目结构
 
-```
+```text
 LicensePlateRecognition/
-├── algorithm/
-│   ├── yolo26/          # YOLO26 车牌识别算法（默认推荐）
-│   └── yolov8/          # YOLOv8 车牌识别算法
-├── backend/             # Spring Boot 后端
-├── frontend/            # Vue 3 前端
-└── README.md
+├─ backend/           # Spring Boot 后端（API、鉴权、任务编排、持久化）
+├─ frontend/          # Vue 3 前端（Vite）
+├─ algorithm/         # Python 识别算法
+│  ├─ yolo26/
+│  ├─ yolov8/
+│  ├─ yolov11/
+│  └─ HyperLPR/
+├─ TestImages/        # 测试图片
+└─ README.md
 ```
-
----
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 前端 | Vue 3 · Element Plus · vue-i18n（中/英双语） · Vite |
-| 后端 | Spring Boot 3 · Spring Data JPA · JWT 认证 · BCrypt |
-| 数据库 | MySQL 8 |
-| 算法 | YOLO26（推荐）· YOLOv8，均通过 Python 虚拟环境隔离 |
+- 后端：Spring Boot 3.2.5、Spring Data JPA、JJWT、Spring Mail
+- 前端：Vue 3、Vite、Element Plus、Pinia、vue-i18n
+- 算法：YOLO26、YOLOv8、YOLOv11+LPRNet、HyperLPR（由后端通过 `ProcessBuilder` 调用）
+- 数据库：MySQL 8
 
----
+## 核心识别链路
 
-## 功能特性
+1. 前端上传图片到 `POST /api/v1/analyze/upload`（携带 JWT）。
+2. 后端保存原图到 `app.upload.dir/{userId}`。
+3. 后端把图片复制到临时输入目录，调用算法脚本执行识别。
+4. 解析算法标准输出（stdout）中的车牌号/颜色/类型，等待输出图写入。
+5. 结果图复制到 `app.result.dir/{userId}`，并写入 `recognition_records`。
+6. 返回统一响应格式：`{ code, message, data }`。
 
-- **用户认证**：注册 / 登录，JWT Token，受保护路由（`/analyze`、`/history` 需登录）
-- **双算法引擎**：上传时选择 YOLO26（默认）或 YOLOv8，算法各自独立 `.venv` 环境
-- **per-user 目录隔离**：上传图片与结果图片分别存储在 `upload/images/{userId}/` 和 `upload/results/{userId}/`
-- **历史记录**：按用户隔离、支持关键词搜索与日期筛选、分页展示、原图/结果图双图对比
-- **中英双语**：页面右上角语言切换，中文为默认
+关键代码：
+- `backend/src/main/java/com/wy0225/service/impl/AnalyzeServiceImpl.java`
+- `backend/src/main/java/com/wy0225/config/AlgorithmConfig.java`
+- `backend/src/main/java/com/wy0225/config/WebConfig.java`
 
----
+## 快速开始
 
-## 环境要求
+### 1) 环境要求
 
 - JDK 17+
 - Maven 3.8+
-- Node.js 18+
-- Python 3.10 ~ 3.12
+- Node.js `^20.19.0 || >=22.12.0`（见 `frontend/package.json`）
+- Python 3.10+（建议 3.10/3.11）
 - MySQL 8
 
----
+### 2) 初始化数据库
 
-## 快速启动
+执行：
 
-### 1. 数据库初始化
-
-启动 MySQL，执行建表脚本：
 ```sql
--- 执行 backend/init.sql
+-- backend/init.sql
 ```
 
-在 `backend/src/main/resources/application.yml` 中配置数据库连接：
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://<host>:<port>/lpr_db?...
-    username: root
-    password: root
+默认会创建库 `lpr_db` 和管理员账号：
+- 邮箱：`admin@lpr.com`
+- 初始密码：`123456`
+
+### 3) 配置后端本地私密参数
+
+复制：
+
+```text
+backend/src/main/resources/application-local.yml.example
+-> backend/src/main/resources/application-local.yml
 ```
 
-### 2. 算法环境安装
+至少确认这些配置：
+- `spring.datasource.*`
+- `spring.mail.*`
+- `app.mail.from`
+- `app.algorithms.*`（算法目录、Python 路径、脚本名）
 
-> ⚠️ **必须先单独安装 torch，再安装其他依赖**，避免 Python 3.12 的 DLL 兼容性问题。
+### 4) 准备算法环境（以 Windows 为例）
 
-**YOLO26：**
-```bash
-cd algorithm/yolo26
+YOLO26：
+
+```powershell
+cd algorithm\yolo26
 python -m venv .venv
-.venv\Scripts\activate         # Windows
+.\.venv\Scripts\Activate.ps1
 pip install "torch==2.4.1" "torchvision==0.19.1" --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
-**YOLOv8：**
-```bash
-cd algorithm/yolov8
+YOLOv8：
+
+```powershell
+cd algorithm\yolov8
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install "torch==2.4.1" "torchvision==0.19.1" --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
-### 3. 启动后端
+YOLOv11 / HyperLPR 可按各自目录 README 安装。
 
-```bash
+### 5) 启动服务
+
+后端：
+
+```powershell
 cd backend
+mvn clean test
 mvn spring-boot:run
-# 默认监听 http://localhost:8088
 ```
 
-### 4. 启动前端
+前端：
 
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
-# 默认访问 http://localhost:5173
 ```
 
----
+默认访问地址：
+- 前端：`http://localhost:5173`
+- 后端：`http://localhost:8088`
 
-## 算法配置
+## API 概览
 
-在 `backend/src/main/resources/application.yml` 中配置各算法路径：
+- 认证：`/api/v1/auth/*`
+- 识别：`/api/v1/analyze/upload`
+- 历史：`/api/v1/history/*`
+- 反馈：`/api/v1/feedback/*`
+- 管理：`/api/v1/admin/*`
 
-```yaml
-app:
-  upload:
-    dir: upload/images
-  result:
-    dir: upload/results
-  algorithms:
-    yolo26:
-      base-dir: ../algorithm/yolo26
-      python-path: ../algorithm/yolo26/.venv/Scripts/python.exe
-      script-name: detect_rec_plate.py
-    yolov8:
-      base-dir: ../algorithm/yolov8
-      python-path: ../algorithm/yolov8/.venv/Scripts/python.exe
-      script-name: detect_rec_plate.py
-      detect-model: weights/yolov8s.pt
-      rec-model: weights/plate_rec_color.pth
-```
+所有控制器位于 `backend/src/main/java/com/wy0225/controller/`。
 
----
+## 关键配置说明
 
-## 系统架构
+算法配置位于 `backend/src/main/resources/application.yml` 的 `app.algorithms.*`：
 
-```
-[Vue 3 前端]
-    │  POST /api/v1/analyze/upload  (multipart/form-data + JWT)
-    ▼
-[Spring Boot 后端]
-    │  java.lang.ProcessBuilder
-    ▼
-[Python 算法脚本 (.venv)]
-    │  stdout 输出车牌号、颜色、耗时
-    ▼
-[AnalyzeService 正则解析] ──► [MySQL 存储] ──► [JSON 响应]
-```
+- 必填：`base-dir`、`python-path`、`script-name`
+- 可选：`detect-model`、`rec-model`（当前用于 `yolov8`）
 
-后端通过 `ProcessBuilder` 启动 Python 子进程，捕获 stdout，用正则提取结构化识别结果，无需 JNI 或 ONNX Java 绑定。
+调用约定：
+- 后端设置工作目录为 `base-dir`
+- 设置环境变量 `PYTHONIOENCODING=utf-8`
+- `yolov8` 额外传 `--detect_model --rec_model`
+- 其他算法默认附加 `--device cpu`
 
----
+融合模式（`modelType=fusion`）会串行执行 `hyperlpr`、`yolov8`、`yolo26`、`yolov11`，并以 `yolo26` 的结果图作为最终保存图。
 
-## 支持的车牌类型
+## 常见问题
 
-单行蓝牌 · 单行黄牌 · 新能源车牌 · 白色警用车牌 · 教练车牌 · 武警车牌 · 双层黄牌 · 双层白牌 · 使馆车牌 · 港澳粤Z牌 · 双层绿牌 · 民航车牌
+- `CreateProcess error=2`：通常是 `python-path` 或 `base-dir` 配置错误。
+- 算法执行成功但无结果图：脚本输出目录中结果文件名必须与输入文件名一致。
+- Linux 部署：`python-path` 需改为 `.venv/bin/python` 风格路径。
+- 若本地目录使用 `algorithm/yolov11`，请同步修正配置中的 `app.algorithms.yolov11.base-dir`。
 
----
+## 模块文档
 
-## 注意事项
-
-- 首次启动时 Hibernate 会自动根据实体类建表（`ddl-auto: update`），也可手动执行 `backend/init.sql`
-- Linux 部署时将 `python-path` 改为 `.venv/bin/python`
-- 请确保 `algorithm/yolov8/weights/` 目录下已放置模型文件（`yolov8s.pt`、`plate_rec_color.pth`）
+- `backend/README.md`
+- `frontend/README.md`
+- `algorithm/README.md`
